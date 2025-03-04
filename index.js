@@ -16,6 +16,7 @@ YouTube : https://www.youtube.com/@GlaceYT
 
 
 */
+
 const { 
   Client, 
   GatewayIntentBits, 
@@ -59,18 +60,6 @@ client.once('ready', async () => {
   updateStatus();
   setInterval(updateStatus, 10000);
   heartbeat();
-
-  const guild = client.guilds.cache.get('123456789012345678'); // Podaj poprawne ID serwera
-  if (!guild) return;
-
-  try {
-    await guild.commands.create({
-      name: 'panel',
-      description: 'Tworzy panel do zgłoszeń.',
-    });
-  } catch (error) {
-    console.error('Błąd podczas rejestracji komendy:', error);
-  }
 });
 
 function updateStatus() {
@@ -91,11 +80,9 @@ function heartbeat() {
   }, 30000);
 }
 
-// TWORZENIE PANELU TICKETÓW
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isCommand()) return;
-
-  if (interaction.commandName === 'panel') {
+// TWORZENIE PANELU TICKETÓW NA KOMENDĘ !panel
+client.on('messageCreate', async message => {
+  if (message.content === '!panel') {
     const embed = new EmbedBuilder()
       .setTitle('📩 **Witaj!**')
       .setDescription('Wybierz opcję z listy, aby utworzyć ticket.')
@@ -120,13 +107,13 @@ client.on('interactionCreate', async interaction => {
       ]);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
-    await interaction.reply({ embeds: [embed], components: [row] });
+    await message.channel.send({ embeds: [embed], components: [row] });
   }
 });
 
 // OBSŁUGA WYBORU UŻYTKOWNIKA
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isStringSelectMenuInteraction()) return;
+  if (!interaction.isStringSelectMenu()) return;
 
   const user = interaction.user;
   const guild = interaction.guild;
@@ -165,8 +152,12 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-client.login(process.env.TOKEN);
+// OBSŁUGA BŁĘDÓW KLIENTA
+client.on('error', error => {
+  console.error('Błąd klienta:', error);
+});
 
+client.login(process.env.TOKEN);
 
   
 /*
