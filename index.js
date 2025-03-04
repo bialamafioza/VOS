@@ -144,14 +144,14 @@ client.on('interactionCreate', async interaction => {
 
         // Wysłać formularz w nowym kanale ticketu
         const ticketFormEmbed = new EmbedBuilder()
-          .setTitle('🎟️ **Ticket - Potrzebuję Pilnej Pomocy!** 🎟️')
+          .setTitle('🎟️ **Ticket - Potrzebuję Pomocy!** 🎟️')
           .setDescription('Proszę wypełnić poniższy formularz, abyśmy mogli Ci pomóc szybciej!')
           .addFields(
             { name: '🔧 Problem:', value: '👉 **Opis:**\Napisz jak najdokładniej, co się dzieje! Im więcej szczegółów, tym szybciej pomożemy!' },
             { name: '📅 Kiedy wystąpił problem?', value: '📌 **Data/Godzina:**\nPrzypomnij sobie, kiedy to się stało. 🕒' },
             { name: '💥 Szczegóły:', value: '📋 **Co próbowałeś zrobić, aby rozwiązać problem?**' },
             { name: '📌 Priorytet zgłoszenia:', value: '🔴🟡🟢' },
-            { name: '👤 Twoja rola na serwerze:', value: '🤖 **Jaka jest Twoja rola na serwerze?**' },
+            { name: '👤 Twoja rola na serwerze:' },
             { name: '📸 Dodatkowe informacje (opcjonalnie):', value: 'Masz screenshoty? Logi? Inne materiały, które mogą pomóc rozwiązać problem?' },
           )
           .setColor('#ffcc00')
