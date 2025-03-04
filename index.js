@@ -23,7 +23,8 @@ const {
   ActionRowBuilder, 
   StringSelectMenuBuilder, 
   EmbedBuilder, 
-  PermissionsBitField 
+  PermissionsBitField, 
+  ChannelType 
 } = require('discord.js');
 require('dotenv').config();
 const express = require('express');
@@ -54,11 +55,23 @@ const statusTypes = ['dnd', 'idle'];
 let currentStatusIndex = 0;
 let currentTypeIndex = 0;
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`Zalogowano jako ${client.user.tag}`);
   updateStatus();
   setInterval(updateStatus, 10000);
   heartbeat();
+
+  const guild = client.guilds.cache.get('123456789012345678'); // Podaj poprawne ID serwera
+  if (!guild) return;
+
+  try {
+    await guild.commands.create({
+      name: 'panel',
+      description: 'Tworzy panel do zgłoszeń.',
+    });
+  } catch (error) {
+    console.error('Błąd podczas rejestracji komendy:', error);
+  }
 });
 
 function updateStatus() {
@@ -83,7 +96,7 @@ function heartbeat() {
 
 // TWORZENIE PANELU TICKETÓW
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return;
+  if (!interaction.isCommand()) return;
 
   if (interaction.commandName === 'panel') {
     const embed = new EmbedBuilder()
@@ -110,59 +123,53 @@ client.on('interactionCreate', async interaction => {
       ]);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
-
     await interaction.reply({ embeds: [embed], components: [row] });
   }
 });
 
 // OBSŁUGA WYBORU UŻYTKOWNIKA
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isStringSelectMenu()) return;
+  if (!interaction.isStringSelectMenuInteraction()) return;
 
   const user = interaction.user;
   const guild = interaction.guild;
 
   if (interaction.customId === 'ticket_menu') {
     if (interaction.values[0] === 'create_ticket') {
-      const ticketChannel = await guild.channels.create({
-        name: `ticket-${user.username}`,
-        type: 0, // Kanał tekstowy
-        parent: '123456789012345678', // Prawidłowe ID kategorii!
-        permissionOverwrites: [
-          {
-            id: guild.id,
-            deny: [PermissionsBitField.Flags.ViewChannel],
-          },
-          {
-            id: user.id,
-            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
-          },
-          {
-            id: '987654321098765432', // Prawidłowe ID roli administratora!
-            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels],
-          }
-        ]
-      });
+      try {
+        const ticketChannel = await guild.channels.create({
+          name: `ticket-${user.username}`,
+          type: ChannelType.GuildText, // Kanał tekstowy
+          parent: '123456789012345678', // Podaj poprawne ID kategorii!
+          permissionOverwrites: [
+            {
+              id: guild.id,
+              deny: [PermissionsBitField.Flags.ViewChannel],
+            },
+            {
+              id: user.id,
+              allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+            },
+            {
+              id: '987654321098765432', // Podaj poprawne ID roli administratora!
+              allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels],
+            }
+          ]
+        });
 
-      await interaction.reply({ content: `📩 Ticket został utworzony: ${ticketChannel}`, ephemeral: true });
+        await interaction.reply({ content: `📩 Ticket został utworzony: ${ticketChannel}`, ephemeral: true });
+      } catch (error) {
+        console.error('Błąd podczas tworzenia kanału:', error);
+        await interaction.reply({ content: '❌ Wystąpił błąd podczas tworzenia ticketu.', ephemeral: true });
+      }
     } else if (interaction.values[0] === 'custom_ticket') {
       await interaction.reply({ content: '🛠️ Proszę opisać swój problem. Administracja odpowie najszybciej, jak to możliwe!', ephemeral: true });
     }
   }
 });
 
-// KOMENDA DO PANELU
-client.on('ready', async () => {
-  const guild = client.guilds.cache.get('123456789012345678'); // Prawidłowe ID serwera!
-  if (!guild) return;
-
-  await guild.commands.create({
-    name: 'panel',
-    description: 'Tworzy panel do zgłoszeń.',
-  });
-});
-
 client.login(process.env.TOKEN);
+
 
   
 /*
