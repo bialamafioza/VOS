@@ -135,7 +135,7 @@ client.on('interactionCreate', async interaction => {
               allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
             },
             {
-              id: '987654321098765432', // Podaj poprawne ID roli administratora!
+              id: '1300816251706409020', // Podaj poprawne ID roli administratora!
               allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels],
             }
           ]
