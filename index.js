@@ -16,51 +16,60 @@ YouTube : https://www.youtube.com/@GlaceYT
 
 
 */
-const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
+const { 
+  Client, 
+  GatewayIntentBits, 
+  ActivityType, 
+  ActionRowBuilder, 
+  StringSelectMenuBuilder, 
+  EmbedBuilder, 
+  PermissionsBitField 
+} = require('discord.js');
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
 
 const client = new Client({
   intents: [
-    GatewayIntentBits.Guilds
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
   ],
 });
 
 const app = express();
 const port = 3000;
+
 app.get('/', (req, res) => {
   const imagePath = path.join(__dirname, 'index.html');
   res.sendFile(imagePath);
 });
+
 app.listen(port, () => {
-  console.log('\x1b[36m[ SERVER ]\x1b[0m', '\x1b[32m SH : http://localhost:' + port + ' ✅\x1b[0m');
+  console.log('\x1b[36m[ SERVER ]\x1b[0m', `\x1b[32m SH : http://localhost:${port} ✅\x1b[0m`);
 });
 
 const statusMessages = ["🎧 Biala Mafioza", "🎮 Biala Mafioza"];
-const statusTypes = [ 'dnd', 'idle'];
+const statusTypes = ['dnd', 'idle'];
 let currentStatusIndex = 0;
 let currentTypeIndex = 0;
 
-async function login() {
-  try {
-    await client.login(process.env.TOKEN);
-    console.log('\x1b[36m[ LOGIN ]\x1b[0m', `\x1b[32mLogged in as: ${client.user.tag} ✅\x1b[0m`);
-    console.log('\x1b[36m[ INFO ]\x1b[0m', `\x1b[35mBot ID: ${client.user.id} \x1b[0m`);
-    console.log('\x1b[36m[ INFO ]\x1b[0m', `\x1b[34mConnected to ${client.guilds.cache.size} server(s) \x1b[0m`);
-  } catch (error) {
-    console.error('\x1b[31m[ ERROR ]\x1b[0m', 'Failed to log in:', error);
-    process.exit(1);
-  }
-}
+client.once('ready', () => {
+  console.log(`Zalogowano jako ${client.user.tag}`);
+  updateStatus();
+  setInterval(updateStatus, 10000);
+  heartbeat();
+});
 
 function updateStatus() {
   const currentStatus = statusMessages[currentStatusIndex];
   const currentType = statusTypes[currentTypeIndex];
+  
   client.user.setPresence({
-    activities: [{ name: currentStatus, type: ActivityType.Custom }],
+    activities: [{ name: currentStatus, type: ActivityType.Playing }],
     status: currentType,
   });
+
   console.log('\x1b[33m[ STATUS ]\x1b[0m', `Updated status to: ${currentStatus} (${currentType})`);
   currentStatusIndex = (currentStatusIndex + 1) % statusMessages.length;
   currentTypeIndex = (currentTypeIndex + 1) % statusTypes.length;
@@ -72,30 +81,9 @@ function heartbeat() {
   }, 30000);
 }
 
-client.once('ready', () => {
-  console.log('\x1b[36m[ INFO ]\x1b[0m', `\x1b[34mPing: ${client.ws.ping} ms \x1b[0m`);
-  updateStatus();
-  setInterval(updateStatus, 10000);
-  heartbeat();
-});
-const { Client, GatewayIntentBits, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder, PermissionsBitField } = require('discord.js');
-require('dotenv').config();
-
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ],
-});
-
-client.once('ready', () => {
-  console.log(`Zalogowano jako ${client.user.tag}`);
-});
-
 // TWORZENIE PANELU TICKETÓW
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isCommand()) return;
+  if (!interaction.isChatInputCommand()) return;
 
   if (interaction.commandName === 'panel') {
     const embed = new EmbedBuilder()
@@ -139,7 +127,7 @@ client.on('interactionCreate', async interaction => {
       const ticketChannel = await guild.channels.create({
         name: `ticket-${user.username}`,
         type: 0, // Kanał tekstowy
-        parent: 'ID_KATEGORII_TICKETÓW', // Uzupełnij ID kategorii!
+        parent: '123456789012345678', // Prawidłowe ID kategorii!
         permissionOverwrites: [
           {
             id: guild.id,
@@ -150,7 +138,7 @@ client.on('interactionCreate', async interaction => {
             allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
           },
           {
-            id: 'ID_ROLE_ADMINISTRATORA', // Uzupełnij ID roli administratora!
+            id: '987654321098765432', // Prawidłowe ID roli administratora!
             allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels],
           }
         ]
@@ -165,7 +153,7 @@ client.on('interactionCreate', async interaction => {
 
 // KOMENDA DO PANELU
 client.on('ready', async () => {
-  const guild = client.guilds.cache.get('ID_TWOJEGO_SERWERA'); // Uzupełnij ID serwera!
+  const guild = client.guilds.cache.get('123456789012345678'); // Prawidłowe ID serwera!
   if (!guild) return;
 
   await guild.commands.create({
@@ -175,8 +163,6 @@ client.on('ready', async () => {
 });
 
 client.login(process.env.TOKEN);
-
-login();
 
   
 /*
