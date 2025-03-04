@@ -17,7 +17,7 @@ YouTube : https://www.youtube.com/@GlaceYT
 
 */
 
-cconst { 
+const { 
   Client, 
   GatewayIntentBits, 
   ActivityType, 
@@ -125,7 +125,7 @@ client.on('interactionCreate', async interaction => {
         const ticketChannel = await guild.channels.create({
           name: `ticket-${user.username}`,
           type: ChannelType.GuildText,
-          parent: '1302743323089309876',
+          parent: '1302743323089309876', // ID kategorii
           permissionOverwrites: [
             {
               id: guild.id,
@@ -136,11 +136,28 @@ client.on('interactionCreate', async interaction => {
               allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
             },
             {
-              id: '1300816251706409020',
+              id: '1300816251706409020', // ID roli, która ma dostęp do zarządzania kanałem
               allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels],
             }
           ]
         });
+
+        // Wysłać formularz w nowym kanale ticketu
+        const ticketFormEmbed = new EmbedBuilder()
+          .setTitle('🎟️ **Ticket - Potrzebuję Pilnej Pomocy!** 🎟️')
+          .setDescription('Proszę wypełnić poniższy formularz, abyśmy mogli Ci pomóc szybciej!')
+          .addFields(
+            { name: '🔧 Problem:', value: '👉 **Opis:**\Napisz jak najdokładniej, co się dzieje! Im więcej szczegółów, tym szybciej pomożemy!' },
+            { name: '📅 Kiedy wystąpił problem?', value: '📌 **Data/Godzina:**\nPrzypomnij sobie, kiedy to się stało. 🕒' },
+            { name: '💥 Szczegóły:', value: '📋 **Co próbowałeś zrobić, aby rozwiązać problem?**' },
+            { name: '📌 Priorytet zgłoszenia:', value: '🔴🟡🟢' },
+            { name: '👤 Twoja rola na serwerze:', value: '🤖 **Jaka jest Twoja rola na serwerze?**' },
+            { name: '📸 Dodatkowe informacje (opcjonalnie):', value: 'Masz screenshoty? Logi? Inne materiały, które mogą pomóc rozwiązać problem?' },
+          )
+          .setColor('#ffcc00')
+          .setFooter({ text: 'Prosimy o dokładne informacje!' });
+
+        await ticketChannel.send({ embeds: [ticketFormEmbed] });
 
         await interaction.reply({ content: `📩 Ticket został utworzony: ${ticketChannel}`, ephemeral: true });
       } catch (error) {
@@ -191,6 +208,7 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(process.env.TOKEN);
+
 
   
 /*
