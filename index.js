@@ -124,7 +124,7 @@ client.on('interactionCreate', async interaction => {
         const ticketChannel = await guild.channels.create({
           name: `ticket-${user.username}`,
           type: ChannelType.GuildText, // Kanał tekstowy
-          parent: '123456789012345678', // Podaj poprawne ID kategorii!
+          parent: '1300816399161229403', // Podaj poprawne ID kategorii!
           permissionOverwrites: [
             {
               id: guild.id,
