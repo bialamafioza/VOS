@@ -122,6 +122,7 @@ client.on('interactionCreate', async interaction => {
   if (interaction.customId === 'ticket_menu') {
     if (interaction.values[0] === 'create_ticket') {
       try {
+        // Tworzenie nowego kanału ticketowego
         const ticketChannel = await guild.channels.create({
           name: `ticket-${user.username}`,
           type: ChannelType.GuildText,
@@ -136,28 +137,63 @@ client.on('interactionCreate', async interaction => {
               allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
             },
             {
-              id: '1300816251706409020', // ID roli, która ma dostęp do zarządzania kanałem
+              id: '1300816251706409020', // ID roli, która może zarządzać kanałami
               allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels],
             }
           ]
         });
 
-        // Wysłać formularz w nowym kanale ticketu
-        const ticketFormEmbed = new EmbedBuilder()
+        // Wysyłanie formularza do kanału ticketowego
+        const formEmbed = new EmbedBuilder()
           .setTitle('🎟️ **Ticket - Potrzebuję Pilnej Pomocy!** 🎟️')
-          .setDescription('Proszę wypełnić poniższy formularz, abyśmy mogli Ci pomóc szybciej!')
-          .addFields(
-            { name: '🔧 Problem:', value: '👉 **Opis:**\nOpisz jak najdokładniej, co się dzieje! Im więcej szczegółów, tym szybciej pomożemy!' },
-            { name: '📅 Kiedy wystąpił problem?', value: '📌 **Data/Godzina:**\nPrzypomnij sobie, kiedy to się stało. 🕒' },
-            { name: '💥 Szczegóły:', value: '📋 **Co próbowałeś zrobić, aby rozwiązać problem?**' },
-            { name: '📌 Priorytet zgłoszenia:', value: '🔴 Wysoki priorytet – np. "Nie mogę korzystać z kanałów głosowych"' },
-            { name: '👤 Twoja rola na serwerze:', value: '🤖 **Jaka jest Twoja rola na serwerze?**' },
-            { name: '📸 Dodatkowe informacje (opcjonalnie):', value: 'Masz screenshoty? Logi? Inne materiały, które mogą pomóc rozwiązać problem?' },
-          )
-          .setColor('#ffcc00')
-          .setFooter({ text: 'Prosimy o dokładne informacje!' });
+          .setColor('#3498db')
+          .setDescription(`
+            **🔧 Problem:**  
+            👉 **Opis:**  
+            Opisuj jak najdokładniej, co się dzieje! Im więcej szczegółów, tym szybciej pomożemy! 🙌  
+            Przykład:  
+            _"Nie mogę dołączyć do kanału głosowego, chociaż próbuję kliknąć. Ekran jakby się zawiesza!"_ 😩  
+            Jeśli pojawił się jakiś komunikat o błędzie, dodaj go też. Im więcej info, tym lepiej! 🔍
 
-        await ticketChannel.send({ embeds: [ticketFormEmbed] });
+            **📅 Kiedy wystąpił problem?**  
+            📌 **Data/Godzina:**  
+            Przypomnij sobie, kiedy to się stało. 🕒  
+            Przykład:  
+            _"Po ostatniej aktualizacji Discorda (wczoraj, 18:30)"_  
+            Kiedy dokładnie wystąpił problem? Im dokładniej podasz, tym szybciej znajdziemy rozwiązanie! ⏳
+
+            **💥 Szczegóły:**  
+            📋 **Co próbowałeś zrobić, aby rozwiązać problem?**  
+            Jeśli podjąłeś jakiekolwiek próby naprawy, napisz o nich! To pomoże nam oszczędzić czas na rozwiązanie Twojego problemu. ⏰  
+            Przykład:  
+            _"nic nie zrobiłem ."_ 🛠️   
+            Każdy detal się liczy, nawet jeśli wydaje się mały! 👀
+
+            **📌 Priorytet zgłoszenia:**  
+            🔴 **Wysoki priorytet** – np. "Nie mogę korzystać z kanałów głosowych i nie mam jak się połączyć z innymi." 😱  
+            🟡 **Średni priorytet** – np. "Mój status na serwerze jest zablokowany, ale ogólnie mogę korzystać z serwera." 😅  
+            🟢 **Niski priorytet** – np. "Chciałbym zmienić kolor czcionki na serwerze." 🎨
+
+            **👤 Twoja rola na serwerze:**  
+            🤖 **Jaka jest Twoja rola na serwerze?**  
+            Napisz, czy jesteś:  
+            - **Członkiem** 🧑‍🤝‍🧑  
+            - **Moderatora** 🛡️  
+            - **Administratorem** 🏅  
+            Pomoże nam to lepiej zrozumieć kontekst Twojego zgłoszenia! 💡
+
+            **📸 Dodatkowe informacje (opcjonalnie):**  
+            Masz screenshoty? Logi? Inne materiały, które mogą pomóc rozwiązać problem? 🔎  
+            Załącz je tutaj! Dzięki temu będziemy mogli szybciej działać i rozwiązać Twój problem! 📸  
+            (W razie potrzeby możesz również opisać problem, jeśli zrzut ekranu nie oddaje pełnego obrazu!) 🎯
+
+            **Dziękujemy za zgłoszenie!** 🙏  
+            **Jestemy na to gotowi!** 💪  
+            Postaramy się odpowiedzieć jak najszybciej. Będziemy na Ciebie czekać! ⏳
+          `)
+          .setFooter({ text: 'Ticket System - Formularz Zgłoszenia' });
+
+        await ticketChannel.send({ content: `📩 Witaj w swoim ticketcie, ${user.tag}!`, embeds: [formEmbed] });
 
         await interaction.reply({ content: `📩 Ticket został utworzony: ${ticketChannel}`, ephemeral: true });
       } catch (error) {
@@ -196,18 +232,7 @@ client.on('messageCreate', async message => {
   }
 });
 
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isStringSelectMenu()) return;
-  if (interaction.customId === 'verify') {
-    const role = interaction.guild.roles.cache.get('1300816261655302216');
-    if (role) {
-      await interaction.member.roles.add(role);
-      await interaction.reply({ content: '✅ Pomyślnie zweryfikowano!', ephemeral: true });
-    }
-  }
-});
-
-client.login(process.env.TOKEN);
+client.login(process.env.BOT_TOKEN);
 
   
 /*
