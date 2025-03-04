@@ -182,7 +182,7 @@ client.on('messageCreate', async message => {
 client.on('interactionCreate', async interaction => {
   if (!interaction.isStringSelectMenu()) return;
   if (interaction.customId === 'verify') {
-    const role = interaction.guild.roles.cache.get('ID_ROLI_ZWERYFIKOWANY');
+    const role = interaction.guild.roles.cache.get('1300816261655302216');
     if (role) {
       await interaction.member.roles.add(role);
       await interaction.reply({ content: '✅ Pomyślnie zweryfikowano!', ephemeral: true });
