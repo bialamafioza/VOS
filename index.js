@@ -35,6 +35,7 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.MessageContent
   ],
 });
@@ -52,7 +53,7 @@ app.listen(port, () => {
 });
 
 const statusMessages = ["🎧 Biala Mafioza", "🎮 Biala Mafioza"];
-const statusType = 'online'; // Stały tryb online
+const statusType = 'online'; 
 let currentStatusIndex = 0;
 
 client.once('ready', async () => {
@@ -123,8 +124,8 @@ client.on('interactionCreate', async interaction => {
       try {
         const ticketChannel = await guild.channels.create({
           name: `ticket-${user.username}`,
-          type: ChannelType.GuildText, // Kanał tekstowy
-          parent: '1300816399161229403', // Podaj poprawne ID kategorii!
+          type: ChannelType.GuildText,
+          parent: '1300816399161229403',
           permissionOverwrites: [
             {
               id: guild.id,
@@ -135,7 +136,7 @@ client.on('interactionCreate', async interaction => {
               allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
             },
             {
-              id: '1300816251706409020', // Podaj poprawne ID roli administratora!
+              id: '1300816251706409020',
               allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels],
             }
           ]
@@ -155,6 +156,38 @@ client.on('interactionCreate', async interaction => {
 // OBSŁUGA BŁĘDÓW KLIENTA
 client.on('error', error => {
   console.error('Błąd klienta:', error);
+});
+
+// KOMENDA WERYFIKACJI !weryfikacja
+client.on('messageCreate', async message => {
+  if (message.content === '!weryfikacja') {
+    const embed = new EmbedBuilder()
+      .setTitle('🔒 Weryfikacja')
+      .setDescription('Kliknij przycisk poniżej, aby się zweryfikować!')
+      .setColor('#ffcc00');
+
+    const row = new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId('verify')
+        .setPlaceholder('✅ Zweryfikuj się')
+        .addOptions([
+          { label: 'Zweryfikuj', value: 'verify' }
+        ])
+    );
+
+    await message.channel.send({ embeds: [embed], components: [row] });
+  }
+});
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isStringSelectMenu()) return;
+  if (interaction.customId === 'verify') {
+    const role = interaction.guild.roles.cache.get('ID_ROLI_ZWERYFIKOWANY');
+    if (role) {
+      await interaction.member.roles.add(role);
+      await interaction.reply({ content: '✅ Pomyślnie zweryfikowano!', ephemeral: true });
+    }
+  }
 });
 
 client.login(process.env.TOKEN);
