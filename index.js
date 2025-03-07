@@ -175,20 +175,19 @@ client.on('error', error => {
   console.error('Błąd klienta:', error);
 });
 
-// KOMENDA WERYFIKACJI !weryfikacja
 client.on('messageCreate', async message => {
   if (message.content === '!weryfikacja') {
     const embed = new EmbedBuilder()
       .setTitle('🔒 Weryfikacja')
-      .setDescription('Kliknij przycisk poniżej, aby się zweryfikować!')
+      .setDescription('Kliknij przycisk poniżej, aby rozpocząć weryfikację!')
       .setColor('#ffcc00');
 
     const row = new ActionRowBuilder().addComponents(
       new StringSelectMenuBuilder()
-        .setCustomId('verify')
-        .setPlaceholder('✅ Zweryfikuj się')
+        .setCustomId('verify_start')
+        .setPlaceholder('✅ Rozpocznij weryfikację')
         .addOptions([
-          { label: 'Zweryfikuj', value: 'verify' }
+          { label: 'Rozpocznij', value: 'start_verification' }
         ])
     );
 
@@ -196,18 +195,103 @@ client.on('messageCreate', async message => {
   }
 });
 
+// Obsługa rozpoczęcia weryfikacji
 client.on('interactionCreate', async interaction => {
   if (!interaction.isStringSelectMenu()) return;
-  if (interaction.customId === 'verify') {
-    const role = interaction.guild.roles.cache.get('1300816261655302216');
-    if (role) {
-      await interaction.member.roles.add(role);
-      await interaction.reply({ content: '✅ Pomyślnie zweryfikowano!', ephemeral: true });
+
+  if (interaction.customId === 'verify_start' && interaction.values[0] === 'start_verification') {
+    const guild = interaction.guild;
+    const user = interaction.user;
+
+    // Tworzymy prywatny kanał dla użytkownika na czas weryfikacji
+    const verificationChannel = await guild.channels.create({
+      name: `weryfikacja-${user.username}`,
+      type: ChannelType.GuildText,
+      parent: '1300816399161229403', // ID kategorii na kanały weryfikacyjne
+      permissionOverwrites: [
+        { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+        { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+      ],
+    });
+
+    // Etap 1: Wybór liczby
+    const correctNumberStage1 = '3'; // Poprawna odpowiedź
+    const numbers = ['1', '2', '3', '4', '5'];
+
+    const embed = new EmbedBuilder()
+      .setTitle('🛡️ Etap 1 Weryfikacji')
+      .setDescription('Wybierz poprawną liczbę, aby przejść dalej.')
+      .setColor('#3498db');
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`verification_stage1_${user.id}`)
+      .setPlaceholder('🔢 Wybierz liczbę')
+      .addOptions(numbers.map(num => ({ label: num, value: num })));
+
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+
+    await verificationChannel.send({ embeds: [embed], components: [row] });
+    await interaction.reply({ content: `📩 Weryfikacja rozpoczęta w kanale ${verificationChannel}`, ephemeral: true });
+  }
+});
+
+// Obsługa wyboru liczby w etapie 1
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isStringSelectMenu()) return;
+
+  if (interaction.customId.startsWith('verification_stage1_')) {
+    const user = interaction.user;
+    const correctNumberStage1 = '3';
+
+    if (interaction.values[0] === correctNumberStage1) {
+      const correctNumberStage2 = '7'; // Poprawna odpowiedź dla etapu 2
+      const numbersStage2 = ['6', '7', '8', '9', '10'];
+
+      const embed = new EmbedBuilder()
+        .setTitle('🛡️ Etap 2 Weryfikacji')
+        .setDescription('Brawo! Teraz wybierz poprawną liczbę w drugim etapie.')
+        .setColor('#27ae60');
+
+      const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId(`verification_stage2_${user.id}`)
+        .setPlaceholder('🔢 Wybierz liczbę')
+        .addOptions(numbersStage2.map(num => ({ label: num, value: num })));
+
+      const row = new ActionRowBuilder().addComponents(selectMenu);
+
+      await interaction.update({ embeds: [embed], components: [row] });
+    } else {
+      await interaction.reply({ content: '❌ Niepoprawna odpowiedź! Spróbuj ponownie.', ephemeral: true });
     }
   }
 });
 
-client.login(process.env.TOKEN);
+// Obsługa wyboru liczby w etapie 2
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isStringSelectMenu()) return;
+
+  if (interaction.customId.startsWith('verification_stage2_')) {
+    const user = interaction.user;
+    const correctNumberStage2 = '7';
+
+    if (interaction.values[0] === correctNumberStage2) {
+      const role = interaction.guild.roles.cache.get('1300816261655302216'); // ID roli weryfikacyjnej
+
+      if (role) {
+        await interaction.member.roles.add(role);
+      }
+
+      await interaction.update({ content: '✅ Gratulacje! Pomyślnie zweryfikowano.', embeds: [], components: [] });
+
+      // Usuń kanał weryfikacji po 10 sekundach
+      setTimeout(() => {
+        interaction.channel.delete().catch(console.error);
+      }, 10000);
+    } else {
+      await interaction.reply({ content: '❌ Niepoprawna odpowiedź! Spróbuj ponownie.', ephemeral: true });
+    }
+  }
+});
 
 
   
