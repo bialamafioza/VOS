@@ -167,6 +167,10 @@ client.on('error', error => {
   console.error('Błąd klienta:', error);
 });
 
+const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
+const mongoose = require('mongoose');
+const { token, mongoURI, verificationRoleId, guildId } = require('./config.json');
+
 // Połączenie z bazą danych
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
 const UserSchema = new mongoose.Schema({ userId: String, verificationCode: String, verified: Boolean, attempts: Number });
@@ -236,8 +240,8 @@ client.on('messageCreate', async message => {
     message.reply('✅ Weryfikacja zakończona sukcesem! Otrzymałeś rolę zweryfikowanego użytkownika.');
 });
 
+client.login(token);
 
-client.login(process.env.TOKEN);
 
 
 
