@@ -191,7 +191,9 @@ client.on('error', error => {
   console.error('Błąd klienta:', error);
 });
 
-client.login(token);
+client.login(process.env.TOKEN);
+
+
 
 
 
