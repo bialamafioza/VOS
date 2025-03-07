@@ -17,15 +17,15 @@ YouTube : https://www.youtube.com/@GlaceYT
 
 */
 
-const {
-  Client,
-  GatewayIntentBits,
-  ActivityType,
-  ActionRowBuilder,
-  StringSelectMenuBuilder,
-  EmbedBuilder,
-  PermissionsBitField,
-  ChannelType
+const { 
+  Client, 
+  GatewayIntentBits, 
+  ActivityType, 
+  ActionRowBuilder, 
+  StringSelectMenuBuilder, 
+  EmbedBuilder, 
+  PermissionsBitField, 
+  ChannelType 
 } = require('discord.js');
 require('dotenv').config();
 const express = require('express');
@@ -53,7 +53,7 @@ app.listen(port, () => {
 });
 
 const statusMessages = ["🎧 Biala Mafioza", "🎮 Biala Mafioza"];
-const statusType = 'online';
+const statusType = 'online'; 
 let currentStatusIndex = 0;
 
 client.once('ready', async () => {
@@ -65,7 +65,7 @@ client.once('ready', async () => {
 
 function updateStatus() {
   const currentStatus = statusMessages[currentStatusIndex];
-  
+
   client.user.setPresence({
     activities: [{ name: currentStatus, type: ActivityType.Playing }],
     status: statusType,
@@ -81,6 +81,7 @@ function heartbeat() {
   }, 30000);
 }
 
+// TWORZENIE PANELU TICKETÓW NA KOMENDĘ !panel
 client.on('messageCreate', async message => {
   if (message.content === '!panel') {
     const embed = new EmbedBuilder()
@@ -94,8 +95,16 @@ client.on('messageCreate', async message => {
       .setCustomId('ticket_menu')
       .setPlaceholder('📩 W czym możemy pomóc?')
       .addOptions([
-        { label: '📩 Ticket', description: 'Stwórz standardowy ticket.', value: 'create_ticket' },
-        { label: '🛠️ Stwórz własny', description: 'Podaj własny powód zgłoszenia.', value: 'custom_ticket' }
+        {
+          label: '📩 Ticket',
+          description: 'Stwórz standardowy ticket.',
+          value: 'create_ticket'
+        },
+        {
+          label: '🛠️ Stwórz własny',
+          description: 'Podaj własny powód zgłoszenia.',
+          value: 'custom_ticket'
+        }
       ]);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
@@ -103,9 +112,10 @@ client.on('messageCreate', async message => {
   }
 });
 
+// OBSŁUGA WYBORU UŻYTKOWNIKA
 client.on('interactionCreate', async interaction => {
   if (!interaction.isStringSelectMenu()) return;
-  
+
   const user = interaction.user;
   const guild = interaction.guild;
 
@@ -115,17 +125,30 @@ client.on('interactionCreate', async interaction => {
         const ticketChannel = await guild.channels.create({
           name: `ticket-${user.username}`,
           type: ChannelType.GuildText,
-          parent: '1302743323089309876',
+          parent: '1302743323089309876', // ID kategorii
           permissionOverwrites: [
-            { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-            { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-            { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels] }
+            {
+              id: guild.id,
+              deny: [PermissionsBitField.Flags.ViewChannel],
+            },
+            {
+              id: user.id,
+              allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+            },
+            {
+              id: '1300816251706409020',
+              allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels],
+            }
           ]
         });
 
         const ticketFormEmbed = new EmbedBuilder()
           .setTitle('🎟️ **Ticket - Potrzebuję Pomocy!** 🎟️')
-          .setDescription('Proszę wypełnić poniższy formularz.')
+          .setDescription('Proszę wypełnić poniższy formularz, abyśmy mogli Ci pomóc szybciej!')
+          .addFields(
+            { name: '🔧 Problem:', value: '👉 **Opis:**\nNapisz jak najdokładniej, co się dzieje! Im więcej szczegółów, tym szybciej pomożemy!' },
+            { name: '📅 Kiedy wystąpił problem?', value: '📌 **Data/Godzina:**\nPrzypomnij sobie, kiedy to się stało. 🕒' }
+          )
           .setColor('#ffcc00')
           .setFooter({ text: 'Prosimy o dokładne informacje!' });
 
@@ -139,36 +162,13 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isStringSelectMenu()) return;
-
-  if (interaction.customId.startsWith('verification_stage1_')) {
-    const user = interaction.user;
-    const correctNumberStage1 = '3';
-
-    if (interaction.values[0] === correctNumberStage1) {
-      const correctNumberStage2 = '7';
-      const numbersStage2 = ['6', '7', '8', '9', '10'];
-
-      const embed = new EmbedBuilder()
-        .setTitle('🛡️ Etap 2 Weryfikacji')
-        .setDescription('Brawo! Teraz wybierz poprawną liczbę w drugim etapie.')
-        .setColor('#27ae60');
-
-      const selectMenu = new StringSelectMenuBuilder()
-        .setCustomId(`verification_stage2_${user.id}`)
-        .setPlaceholder('🔢 Wybierz liczbę')
-        .addOptions(numbersStage2.map(num => ({ label: num, value: num })));
-
-      const row = new ActionRowBuilder().addComponents(selectMenu);
-      await interaction.update({ embeds: [embed], components: [row] });
-    } else {
-      await interaction.reply({ content: '❌ Niepoprawna odpowiedź! Spróbuj ponownie.', ephemeral: true });
-    }
-  }
+// OBSŁUGA BŁĘDÓW KLIENTA
+client.on('error', error => {
+  console.error('Błąd klienta:', error);
 });
 
 client.login(process.env.TOKEN);
+
 
 
 
