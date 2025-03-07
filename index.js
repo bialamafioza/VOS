@@ -162,64 +162,80 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-
-
+// TWORZENIE PANELU Weryfikacji NA KOMENDĘ !weryfikacja
 client.on('messageCreate', async message => {
-    if (message.content === '!weryfikacja') {
-        let user = await User.findOne({ userId: message.author.id });
+  if (message.content === '!weryfikacja') {
+    const embed = new EmbedBuilder()
+      .setTitle('✅ **Witaj!**')
+      .setDescription('Wybierz opcję z listy, aby utworzyć Weryfikację .')
+      .setColor('#98db34')
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/4712/4712031.png')
+      .setFooter({ text: 'Weryfikacja Panel' });
 
-        if (user && user.verified) {
-            return message.reply('✅ Jesteś już zweryfikowany!');
-        }
+        const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId('ticket_menu')
+      .setPlaceholder('📩 Wybierz weryfikację')
+      .addOptions([
+        {
+          label: '✅ Weryfikajca',
+          description: 'Stwórz standardową weryfikację.',
+          value: 'create_Weryfikajcę'
+        },
+      ]);
 
-        const verificationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-        if (!user) {
-            user = new User({ userId: message.author.id, verificationCode, verified: false, attempts: 3 });
-        } else {
-            user.verificationCode = verificationCode;
-            user.verified = false;
-            user.attempts = 3;
-        }
-        await user.save();
-
-        const embed = new EmbedBuilder()
-            .setTitle('🔒 Weryfikacja')
-            .setDescription(`Twój kod weryfikacyjny: **${verificationCode}**. Wpisz \`!potwierdz <kod>\` aby się zweryfikować.`)
-            .setColor('BLUE');
-
-        message.author.send({ embeds: [embed] }).catch(() => {
-            message.reply('Nie mogłem wysłać Ci wiadomości prywatnej. Upewnij się, że masz włączone DM.');
-        });
-    }
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+    await message.channel.send({ embeds: [embed], components: [row] });
+  }
 });
 
-client.on('messageCreate', async message => {
-    if (!message.content.startsWith('!potwierdz ')) return;
-    const inputCode = message.content.split(' ')[1];
-    const user = await User.findOne({ userId: message.author.id });
+// OBSŁUGA WYBORU UŻYTKOWNIKA
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isStringSelectMenu()) return;
 
-    if (!user) return message.reply('❌ Nie masz aktywnej weryfikacji.');
-    if (user.verified) return message.reply('✅ Jesteś już zweryfikowany!');
-    if (user.verificationCode !== inputCode) {
-        user.attempts -= 1;
-        await user.save();
+  const user = interaction.user;
+  const guild = interaction.guild;
 
-        if (user.attempts <= 0) {
-            return message.reply('🚨 Przekroczyłeś limit prób! Skontaktuj się z administracją.');
-        }
+  if (interaction.customId === 'weryfikacja_menu') {
+    if (interaction.values[0] === 'create_Weryfikajcę') {
+      try {
+        const ticketChannel = await guild.channels.create({
+          name: `ticket-${user.username}`,
+          type: ChannelType.GuildText,
+          parent: '1300816399161229403', // ID kategorii
+          permissionOverwrites: [
+            {
+              id: guild.id,
+              deny: [PermissionsBitField.Flags.ViewChannel],
+            },
+            {
+              id: user.id,
+              allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+            },
+            {
+              id: '1300816251706409020',
+              allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels],
+            }
+          ]
+        });
 
-        return message.reply(`❌ Błędny kod! Pozostało prób: ${user.attempts}`);
+        const ticketFormEmbed = new EmbedBuilder()
+          .setTitle('🎟️ **Ticket - Potrzebuję Pomocy!** 🎟️')
+          .setDescription('Proszę wypełnić poniższy formularz, abyśmy mogli Ci pomóc szybciej!')
+          .addFields(
+            { name: '🔧 Problem:', value: '👉 **Opis:**\nNapisz jak najdokładniej, co się dzieje! Im więcej szczegółów, tym szybciej pomożemy!' },
+            { name: '📅 Kiedy wystąpił problem?', value: '📌 **Data/Godzina:**\nPrzypomnij sobie, kiedy to się stało. 🕒' }
+          )
+          .setColor('#ffcc00')
+          .setFooter({ text: 'Prosimy o dokładne informacje!' });
+
+        await ticketChannel.send({ embeds: [ticketFormEmbed] });
+        await interaction.reply({ content: `📩 Ticket został utworzony: ${ticketChannel}`, ephemeral: true });
+      } catch (error) {
+        console.error('Błąd podczas tworzenia kanału:', error);
+        await interaction.reply({ content: '❌ Wystąpił błąd podczas tworzenia ticketu.', ephemeral: true });
+      }
     }
-
-    user.verified = true;
-    await user.save();
-
-    const member = message.guild.members.cache.get(message.author.id);
-    if (member) {
-        await member.roles.add(verificationRoleId);
-    }
-
-    message.reply('✅ Weryfikacja zakończona sukcesem! Otrzymałeś rolę zweryfikowanego użytkownika.');
+  }
 });
 
 // OBSŁUGA BŁĘDÓW KLIENTA
