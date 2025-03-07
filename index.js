@@ -167,6 +167,76 @@ client.on('error', error => {
   console.error('Błąd klienta:', error);
 });
 
+// Połączenie z bazą danych
+mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+const UserSchema = new mongoose.Schema({ userId: String, verificationCode: String, verified: Boolean, attempts: Number });
+const User = mongoose.model('User', UserSchema);
+
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMembers, GatewayIntentBits.MessageContent] });
+
+client.once('ready', () => {
+    console.log(`Bot ${client.user.tag} jest online!`);
+});
+
+client.on('messageCreate', async message => {
+    if (message.content === '!weryfikacja') {
+        let user = await User.findOne({ userId: message.author.id });
+
+        if (user && user.verified) {
+            return message.reply('✅ Jesteś już zweryfikowany!');
+        }
+
+        const verificationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        if (!user) {
+            user = new User({ userId: message.author.id, verificationCode, verified: false, attempts: 3 });
+        } else {
+            user.verificationCode = verificationCode;
+            user.verified = false;
+            user.attempts = 3;
+        }
+        await user.save();
+
+        const embed = new EmbedBuilder()
+            .setTitle('🔒 Weryfikacja')
+            .setDescription(`Twój kod weryfikacyjny: **${verificationCode}**. Wpisz \`!potwierdz <kod>\` aby się zweryfikować.`)
+            .setColor('BLUE');
+
+        message.author.send({ embeds: [embed] }).catch(() => {
+            message.reply('Nie mogłem wysłać Ci wiadomości prywatnej. Upewnij się, że masz włączone DM.');
+        });
+    }
+});
+
+client.on('messageCreate', async message => {
+    if (!message.content.startsWith('!potwierdz ')) return;
+    const inputCode = message.content.split(' ')[1];
+    const user = await User.findOne({ userId: message.author.id });
+
+    if (!user) return message.reply('❌ Nie masz aktywnej weryfikacji.');
+    if (user.verified) return message.reply('✅ Jesteś już zweryfikowany!');
+    if (user.verificationCode !== inputCode) {
+        user.attempts -= 1;
+        await user.save();
+
+        if (user.attempts <= 0) {
+            return message.reply('🚨 Przekroczyłeś limit prób! Skontaktuj się z administracją.');
+        }
+
+        return message.reply(`❌ Błędny kod! Pozostało prób: ${user.attempts}`);
+    }
+
+    user.verified = true;
+    await user.save();
+
+    const member = message.guild.members.cache.get(message.author.id);
+    if (member) {
+        await member.roles.add(verificationRoleId);
+    }
+
+    message.reply('✅ Weryfikacja zakończona sukcesem! Otrzymałeś rolę zweryfikowanego użytkownika.');
+});
+
+
 client.login(process.env.TOKEN);
 
 
