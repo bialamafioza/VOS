@@ -173,13 +173,13 @@ client.on('messageCreate', async message => {
       .setFooter({ text: 'Weryfikacja Panel' });
 
         const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId('weryfikacja_menu')
+      .setCustomId('ticket_menu')
       .setPlaceholder('📩 Wybierz weryfikację')
       .addOptions([
         {
           label: '✅ Weryfikajca',
           description: 'Stwórz standardową weryfikację.',
-          value: 'create_Weryfikajcę'
+          value: 'create_ticket'
         },
       ]);
 
@@ -195,8 +195,8 @@ client.on('interactionCreate', async interaction => {
   const user = interaction.user;
   const guild = interaction.guild;
 
-  if (interaction.customId === 'weryfikacja_menu') {
-    if (interaction.values[0] === 'create_Weryfikajcę') {
+  if (interaction.customId === 'ticket_menu') {
+    if (interaction.values[0] === 'create_ticket') {
       try {
         const ticketChannel = await guild.channels.create({
           name: `ticket-${user.username}`,
