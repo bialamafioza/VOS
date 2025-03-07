@@ -162,25 +162,7 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-// OBSŁUGA BŁĘDÓW KLIENTA
-client.on('error', error => {
-  console.error('Błąd klienta:', error);
-});
 
-const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
-const mongoose = require('mongoose');
-const { token, mongoURI, verificationRoleId, guildId } = require('./config.json');
-
-// Połączenie z bazą danych
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
-const UserSchema = new mongoose.Schema({ userId: String, verificationCode: String, verified: Boolean, attempts: Number });
-const User = mongoose.model('User', UserSchema);
-
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMembers, GatewayIntentBits.MessageContent] });
-
-client.once('ready', () => {
-    console.log(`Bot ${client.user.tag} jest online!`);
-});
 
 client.on('messageCreate', async message => {
     if (message.content === '!weryfikacja') {
@@ -238,6 +220,11 @@ client.on('messageCreate', async message => {
     }
 
     message.reply('✅ Weryfikacja zakończona sukcesem! Otrzymałeś rolę zweryfikowanego użytkownika.');
+});
+
+// OBSŁUGA BŁĘDÓW KLIENTA
+client.on('error', error => {
+  console.error('Błąd klienta:', error);
 });
 
 client.login(token);
