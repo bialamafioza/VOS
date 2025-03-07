@@ -81,7 +81,6 @@ function heartbeat() {
   }, 30000);
 }
 
-// TWORZENIE PANELU TICKETÓW NA KOMENDĘ !panel
 client.on('messageCreate', async message => {
   if (message.content === '!panel') {
     const embed = new EmbedBuilder()
@@ -104,6 +103,11 @@ client.on('messageCreate', async message => {
           label: '🛠️ Stwórz własny',
           description: 'Podaj własny powód zgłoszenia.',
           value: 'custom_ticket'
+        },
+        {
+          label: '🔍 Weryfikacja',
+          description: 'Zweryfikuj się podając kod.',
+          value: 'verification_ticket'
         }
       ]);
 
@@ -112,33 +116,23 @@ client.on('messageCreate', async message => {
   }
 });
 
-// OBSŁUGA WYBORU UŻYTKOWNIKA
 client.on('interactionCreate', async interaction => {
   if (!interaction.isStringSelectMenu()) return;
 
   const user = interaction.user;
   const guild = interaction.guild;
-
+  
   if (interaction.customId === 'ticket_menu') {
     if (interaction.values[0] === 'create_ticket') {
       try {
         const ticketChannel = await guild.channels.create({
           name: `ticket-${user.username}`,
           type: ChannelType.GuildText,
-          parent: '1302743323089309876', // ID kategorii
+          parent: '1302743323089309876',
           permissionOverwrites: [
-            {
-              id: guild.id,
-              deny: [PermissionsBitField.Flags.ViewChannel],
-            },
-            {
-              id: user.id,
-              allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
-            },
-            {
-              id: '1300816251706409020',
-              allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels],
-            }
+            { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+            { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+            { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels] }
           ]
         });
 
@@ -154,6 +148,36 @@ client.on('interactionCreate', async interaction => {
 
         await ticketChannel.send({ embeds: [ticketFormEmbed] });
         await interaction.reply({ content: `📩 Ticket został utworzony: ${ticketChannel}`, ephemeral: true });
+      } catch (error) {
+        console.error('Błąd podczas tworzenia kanału:', error);
+        await interaction.reply({ content: '❌ Wystąpił błąd podczas tworzenia ticketu.', ephemeral: true });
+      }
+    }
+    if (interaction.values[0] === 'verification_ticket') {
+      try {
+        const verificationCodes = Array.from({ length: 6 }, () => Math.floor(10000000 + Math.random() * 90000000));
+        const chosenCode = verificationCodes[Math.floor(Math.random() * verificationCodes.length)];
+        
+        const ticketChannel = await guild.channels.create({
+          name: `weryfikacja-${user.username}`,
+          type: ChannelType.GuildText,
+          parent: '1302743323089309876',
+          permissionOverwrites: [
+            { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+            { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+            { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels] }
+          ]
+        });
+
+        const verificationEmbed = new EmbedBuilder()
+          .setTitle('🔍 **Weryfikacja**')
+          .setDescription('Aby zweryfikować swoją tożsamość, podaj poniższy kod w wiadomości:')
+          .addFields({ name: '🆔 Kod Weryfikacyjny:', value: `\`${chosenCode}\`` })
+          .setColor('#ff5733')
+          .setFooter({ text: 'Prosimy o przepisanie kodu dokładnie!' });
+
+        await ticketChannel.send({ embeds: [verificationEmbed] });
+        await interaction.reply({ content: `🔍 Ticket weryfikacyjny został utworzony: ${ticketChannel}`, ephemeral: true });
       } catch (error) {
         console.error('Błąd podczas tworzenia kanału:', error);
         await interaction.reply({ content: '❌ Wystąpił błąd podczas tworzenia ticketu.', ephemeral: true });
