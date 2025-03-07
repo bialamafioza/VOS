@@ -164,7 +164,7 @@ client.on('interactionCreate', async interaction => {
 
 // TWORZENIE PANELU TICKETÓW NA KOMENDĘ !panel
 client.on('messageCreate', async message => {
-  if (message.content === '!panel') {
+  if (message.content === '!wery') {
     const embed = new EmbedBuilder()
       .setTitle('📩 **Witaj!**')
       .setDescription('Wybierz opcję z listy, aby utworzyć ticket.')
