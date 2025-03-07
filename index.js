@@ -162,25 +162,30 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-// TWORZENIE PANELU Weryfikacji NA KOMENDĘ !weryfikacja
+// TWORZENIE PANELU TICKETÓW NA KOMENDĘ !panel
 client.on('messageCreate', async message => {
-  if (message.content === '!weryfikacja') {
+  if (message.content === '!panel') {
     const embed = new EmbedBuilder()
-      .setTitle('✅ **Witaj!**')
-      .setDescription('Wybierz opcję z listy, aby utworzyć Weryfikację .')
-      .setColor('#98db34')
+      .setTitle('📩 **Witaj!**')
+      .setDescription('Wybierz opcję z listy, aby utworzyć ticket.')
+      .setColor('#3498db')
       .setThumbnail('https://cdn-icons-png.flaticon.com/512/4712/4712031.png')
-      .setFooter({ text: 'Weryfikacja Panel' });
+      .setFooter({ text: 'Ticket Panel' });
 
-        const selectMenu = new StringSelectMenuBuilder()
+    const selectMenu = new StringSelectMenuBuilder()
       .setCustomId('ticket_menu')
-      .setPlaceholder('📩 Wybierz weryfikację')
+      .setPlaceholder('📩 W czym możemy pomóc?')
       .addOptions([
         {
-          label: '✅ Weryfikajca',
-          description: 'Stwórz standardową weryfikację.',
+          label: '📩 Ticket',
+          description: 'Stwórz standardowy ticket.',
           value: 'create_ticket'
         },
+        {
+          label: '🛠️ Stwórz własny',
+          description: 'Podaj własny powód zgłoszenia.',
+          value: 'custom_ticket'
+        }
       ]);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
@@ -201,7 +206,7 @@ client.on('interactionCreate', async interaction => {
         const ticketChannel = await guild.channels.create({
           name: `ticket-${user.username}`,
           type: ChannelType.GuildText,
-          parent: '1300816399161229403', // ID kategorii
+          parent: '1302743323089309876', // ID kategorii
           permissionOverwrites: [
             {
               id: guild.id,
