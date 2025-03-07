@@ -173,7 +173,7 @@ client.on('messageCreate', async message => {
       .setFooter({ text: 'Weryfikacja Panel' });
 
         const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId('ticket_menu')
+      .setCustomId('weryfikacja_menu')
       .setPlaceholder('📩 Wybierz weryfikację')
       .addOptions([
         {
