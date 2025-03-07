@@ -49,7 +49,7 @@ app.get('/', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log('\x1b[36m[ SERVER ]\x1b[0m', `\x1b[32m SH : http://localhost:${port} ✅\x1b[0m`);
+  console.log('\x1b[36m[ SERVER ]\x1b[0m', \x1b[32m SH : http://localhost:${port} ✅\x1b[0m);
 });
 
 const statusMessages = ["🎧 Biala Mafioza", "🎮 Biala Mafioza"];
@@ -57,7 +57,7 @@ const statusType = 'online';
 let currentStatusIndex = 0;
 
 client.once('ready', async () => {
-  console.log(`Zalogowano jako ${client.user.tag}`);
+  console.log(Zalogowano jako ${client.user.tag});
   updateStatus();
   setInterval(updateStatus, 10000);
   heartbeat();
@@ -71,13 +71,13 @@ function updateStatus() {
     status: statusType,
   });
 
-  console.log('\x1b[33m[ STATUS ]\x1b[0m', `Updated status to: ${currentStatus} (${statusType})`);
+  console.log('\x1b[33m[ STATUS ]\x1b[0m', Updated status to: ${currentStatus} (${statusType}));
   currentStatusIndex = (currentStatusIndex + 1) % statusMessages.length;
 }
 
 function heartbeat() {
   setInterval(() => {
-    console.log('\x1b[35m[ HEARTBEAT ]\x1b[0m', `Bot is alive at ${new Date().toLocaleTimeString()}`);
+    console.log('\x1b[35m[ HEARTBEAT ]\x1b[0m', Bot is alive at ${new Date().toLocaleTimeString()});
   }, 30000);
 }
 
@@ -123,7 +123,7 @@ client.on('interactionCreate', async interaction => {
     if (interaction.values[0] === 'create_ticket') {
       try {
         const ticketChannel = await guild.channels.create({
-          name: `ticket-${user.username}`,
+          name: ticket-${user.username},
           type: ChannelType.GuildText,
           parent: '1302743323089309876', // ID kategorii
           permissionOverwrites: [
@@ -159,7 +159,7 @@ client.on('interactionCreate', async interaction => {
 
         await ticketChannel.send({ embeds: [ticketFormEmbed] });
 
-        await interaction.reply({ content: `📩 Ticket został utworzony: ${ticketChannel}`, ephemeral: true });
+        await interaction.reply({ content: 📩 Ticket został utworzony: ${ticketChannel}, ephemeral: true });
       } catch (error) {
         console.error('Błąd podczas tworzenia kanału:', error);
         await interaction.reply({ content: '❌ Wystąpił błąd podczas tworzenia ticketu.', ephemeral: true });
@@ -205,7 +205,7 @@ client.on('interactionCreate', async interaction => {
 
     // Tworzymy prywatny kanał dla użytkownika na czas weryfikacji
     const verificationChannel = await guild.channels.create({
-      name: `weryfikacja-${user.username}`,
+      name: weryfikacja-${user.username},
       type: ChannelType.GuildText,
       parent: '1300816399161229403', // ID kategorii na kanały weryfikacyjne
       permissionOverwrites: [
@@ -224,14 +224,14 @@ client.on('interactionCreate', async interaction => {
       .setColor('#3498db');
 
     const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId(`verification_stage1_${user.id}`)
+      .setCustomId(verification_stage1_${user.id})
       .setPlaceholder('🔢 Wybierz liczbę')
       .addOptions(numbers.map(num => ({ label: num, value: num })));
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
 
     await verificationChannel.send({ embeds: [embed], components: [row] });
-    await interaction.reply({ content: `📩 Weryfikacja rozpoczęta w kanale ${verificationChannel}`, ephemeral: true });
+    await interaction.reply({ content: 📩 Weryfikacja rozpoczęta w kanale ${verificationChannel}, ephemeral: true });
   }
 });
 
@@ -253,7 +253,7 @@ client.on('interactionCreate', async interaction => {
         .setColor('#27ae60');
 
       const selectMenu = new StringSelectMenuBuilder()
-        .setCustomId(`verification_stage2_${user.id}`)
+        .setCustomId(verification_stage2_${user.id})
         .setPlaceholder('🔢 Wybierz liczbę')
         .addOptions(numbersStage2.map(num => ({ label: num, value: num })));
 
@@ -292,6 +292,9 @@ client.on('interactionCreate', async interaction => {
     }
   }
 });
+
+client.login(process.env.TOKEN);
+
 
 
   
