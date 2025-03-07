@@ -291,7 +291,7 @@ client.on('interactionCreate', async interaction => {
       await interaction.reply({ content: '❌ Niepoprawna odpowiedź! Spróbuj ponownie.', ephemeral: true });
     }
   }
-});
+})
 
 client.login(process.env.TOKEN);
 
