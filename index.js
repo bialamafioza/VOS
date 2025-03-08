@@ -117,7 +117,7 @@ client.on('interactionCreate', async interaction => {
         const ticketChannel = await guild.channels.create({
           name: `ticket-${user.username}`,
           type: ChannelType.GuildText,
-          parent: '1302743323089309876', // ID kategorii, możesz zmienić to
+          parent: '1302743323089309876',
           permissionOverwrites: [
             { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
             { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
@@ -150,7 +150,7 @@ client.on('interactionCreate', async interaction => {
         const ticketChannel = await guild.channels.create({
           name: `weryfikacja-${user.username}`,
           type: ChannelType.GuildText,
-          parent: '1302743323089309876', // ID kategorii, możesz zmienić to
+          parent: '1302743323089309876',
           permissionOverwrites: [
             { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
             { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
@@ -182,7 +182,7 @@ client.on('interactionCreate', async interaction => {
         const ticketChannel = await guild.channels.create({
           name: `regulamin-${user.username}`,
           type: ChannelType.GuildText,
-          parent: '1302743323089309876', // ID kategorii, możesz zmienić to
+          parent: '1302743323089309876',
           permissionOverwrites: [
             { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
             { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
@@ -191,10 +191,10 @@ client.on('interactionCreate', async interaction => {
         });
 
         const questions = [
-          { question: 'Czy można spamić? ', answer: 'Nie' , 'nie' },
+          { question: 'Czy można spamić?', answer: 'Nie' },
           { question: 'Czy można prosić o rangę?', answer: 'Nie' },
-          { question: 'Czy można podszywać się pod administrację?', answer: 'Nie', 'nie' },
-          { question: 'Czy Administracja ma prawo wejść na kanał prywatny bądź Max (x) w celu skontrolowania graczy?', answer: 'Tak', 'tak'  }
+          { question: 'Czy można podszywać się pod administrację?', answer: 'Nie' },
+          { question: 'Czy Administracja ma prawo wejść na kanał prywatny bądź Max (x) w celu skontrolowania graczy?', answer: 'Tak' }
         ];
 
         regulationAnswers.set(user.id, { questions, currentIndex: 0, correct: 0 });
@@ -245,12 +245,9 @@ client.on('messageCreate', async message => {
       if (member) {
         await member.timeout(60000, 'Niepoprawna odpowiedź na pytanie regulaminowe');
       }
-        await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz od nowa zacząć.Kanał sam się usunie.`);
-        regulationAnswers.delete(message.author.id);
-      }
-      setTimeout(() => {
-        message.channel.delete().catch(console.error);
-      }, 10000);
+      userData.currentIndex = 0; // Resetujemy indeks pytań
+      await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz od nowa zacząć. Kanał sam się usunie.`);
+      regulationAnswers.delete(message.author.id);
     }
 
     userData.currentIndex++;
@@ -268,7 +265,7 @@ client.on('messageCreate', async message => {
           }
         }
       } else {
-        await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz od nowa zacząć.Kanał sam się usunie.`);
+        await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz od nowa zacząć. Kanał sam się usunie.`);
         regulationAnswers.delete(message.author.id);
       }
       setTimeout(() => {
@@ -277,6 +274,7 @@ client.on('messageCreate', async message => {
     }
   }
 });
+
 
 
 // OBSŁUGA BŁĘDÓW KLIENTA
