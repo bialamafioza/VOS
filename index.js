@@ -142,6 +142,7 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ content: '❌ Wystąpił błąd podczas tworzenia ticketu.', ephemeral: true });
       }
     }
+
     if (interaction.values[0] === 'verification_ticket') {
       try {
         const code = Math.floor(10000000 + Math.random() * 90000000);
@@ -172,11 +173,13 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply({ content: '❌ Wystąpił błąd podczas tworzenia ticketu.', ephemeral: true });
       }
     }
+
     if (interaction.values[0] === 'regulation_test') {
       try {
         const member = guild.members.cache.get(user.id);
-        if (member.roles.cache.has('1300816261655302216')) {
-          await member.roles.remove('1300816261655302216');
+        if (!member.roles.cache.has('1300816261655302216')) {
+          await interaction.reply({ content: '❌ Musisz mieć rangę **zweryfikowany**, aby rozpocząć test regulaminowy.', ephemeral: true });
+          return;
         }
 
         const ticketChannel = await guild.channels.create({
@@ -240,14 +243,13 @@ client.on('messageCreate', async message => {
     if (message.content === questions[currentIndex].answer) {
       userData.correct++;
     } else {
-      // Kara za błędną odpowiedź - time mute na 1 minutę
-      const member = message.guild.members.cache.get(message.author.id);
-      if (member) {
-        await member.timeout(60000, 'Niepoprawna odpowiedź na pytanie regulaminowe');
-      }
-      userData.currentIndex = 0; // Resetujemy indeks pytań
-      await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz od nowa zacząć. Kanał sam się usunie.`);
+      // Kara za błędną odpowiedź - kanał zostaje usunięty
+      await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz od nowa zacząć. Kanał zostanie usunięty.`);
       regulationAnswers.delete(message.author.id);
+      setTimeout(() => {
+        message.channel.delete().catch(console.error);
+      }, 5000);
+      return;
     }
 
     userData.currentIndex++;
@@ -265,7 +267,7 @@ client.on('messageCreate', async message => {
           }
         }
       } else {
-        await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz od nowa zacząć. Kanał sam się usunie.`);
+        await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz od nowa zacząć. Kanał zostanie usunięty.`);
         regulationAnswers.delete(message.author.id);
       }
       setTimeout(() => {
@@ -274,6 +276,7 @@ client.on('messageCreate', async message => {
     }
   }
 });
+
 
 
 
