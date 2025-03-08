@@ -140,7 +140,7 @@ client.on('interactionCreate', async interaction => {
         const ticketChannel = await guild.channels.create({
           name: `ticket-${user.username}`,
           type: ChannelType.GuildText,
-          parent: '1302743323089309876',
+          parent: '1302743323089309876', // ID kategorii, możesz zmienić to
           permissionOverwrites: [
             { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
             { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
@@ -173,7 +173,7 @@ client.on('interactionCreate', async interaction => {
         const ticketChannel = await guild.channels.create({
           name: `weryfikacja-${user.username}`,
           type: ChannelType.GuildText,
-          parent: '1302743323089309876',
+          parent: '1302743323089309876', // ID kategorii, możesz zmienić to
           permissionOverwrites: [
             { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
             { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
@@ -205,7 +205,7 @@ client.on('interactionCreate', async interaction => {
         const ticketChannel = await guild.channels.create({
           name: `regulamin-${user.username}`,
           type: ChannelType.GuildText,
-          parent: '1302743323089309876',
+          parent: '1302743323089309876', // ID kategorii, możesz zmienić to
           permissionOverwrites: [
             { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
             { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
@@ -266,9 +266,9 @@ client.on('messageCreate', async message => {
       // Kara za błędną odpowiedź - time mute na 1 minutę
       const member = message.guild.members.cache.get(message.author.id);
       if (member) {
-        await member.timeout(60 * 1000);  // Użytkownik zostaje wyciszony na 1 minutę
-        await message.channel.send(`❌ Odpowiedź ${message.author} była błędna! Zostałeś wyciszony na 1 minutę.`);
+        await member.timeout(60000, 'Niepoprawna odpowiedź na pytanie regulaminowe');
       }
+      await message.channel.send(`❌ Błędna odpowiedź. Jesteś wyciszony na 1 minutę.`);
     }
 
     userData.currentIndex++;
@@ -295,6 +295,7 @@ client.on('messageCreate', async message => {
     }
   }
 });
+
 
 // OBSŁUGA BŁĘDÓW KLIENTA
 client.on('error', error => {
