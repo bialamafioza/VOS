@@ -81,6 +81,10 @@ function heartbeat() {
   }, 30000);
 }
 
+const { Client, Intents, ChannelType, PermissionsBitField, EmbedBuilder, StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
+
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS] });
+
 const verificationCodes = new Map();
 const regulationAnswers = new Map();
 
@@ -258,7 +262,15 @@ client.on('messageCreate', async message => {
     const { questions, currentIndex, correct } = userData;
     if (message.content === questions[currentIndex].answer) {
       userData.correct++;
+    } else {
+      // Kara za błędną odpowiedź - time mute na 1 minutę
+      const member = message.guild.members.cache.get(message.author.id);
+      if (member) {
+        await member.timeout(60 * 1000);  // Użytkownik zostaje wyciszony na 1 minutę
+        await message.channel.send(`❌ Odpowiedź ${message.author} była błędna! Zostałeś wyciszony na 1 minutę.`);
+      }
     }
+
     userData.currentIndex++;
 
     if (userData.currentIndex < questions.length) {
@@ -283,8 +295,6 @@ client.on('messageCreate', async message => {
     }
   }
 });
-
-
 
 // OBSŁUGA BŁĘDÓW KLIENTA
 client.on('error', error => {
