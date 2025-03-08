@@ -197,8 +197,11 @@ client.on('messageCreate', async message => {
         const member = message.guild.members.cache.get(message.author.id);
         if (member) {
           await member.roles.add(role);
-          await message.channel.send(`✅ Gratulacje ${message.author}, pomyślnie zweryfikowano!`);
+          await message.channel.send(`✅ Gratulacje ${message.author}, pomyślnie zweryfikowano! Kanał zostanie usunięty za 10 sekund.`);
           verificationCodes.delete(message.author.id);
+          setTimeout(() => {
+            message.channel.delete().catch(console.error);
+          }, 10000);
         }
       }
     } else {
