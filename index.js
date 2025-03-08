@@ -202,7 +202,7 @@ client.on('interactionCreate', async interaction => {
 
         regulationAnswers.set(user.id, { questions, currentIndex: 0, correct: 0 });
 
-        await ticketChannel.send(`📜 **Regulamin** - Odpowiedz na pytania poprawnie, aby uzyskać rangę.(Pisz z dużej litery np Tak lub Nie) `);
+        await ticketChannel.send(`📜 **Regulamin** - Odpowiedz na pytania poprawnie, aby uzyskać rangę.`);
         await ticketChannel.send(questions[0].question);
 
         await interaction.reply({ content: `📜 regulaminu został rozpoczęty: ${ticketChannel}`, ephemeral: true });
@@ -243,7 +243,13 @@ client.on('messageCreate', async message => {
     if (message.content === questions[currentIndex].answer) {
       userData.correct++;
     } else {
-      // Kara za błędną odpowiedź - kanał zostaje usunięty
+      // Kara za błędną odpowiedź - kanał zostaje usunięty i time mute
+      const member = message.guild.members.cache.get(message.author.id);
+      if (member) {
+        // Dodajemy time mute na 1 minutę
+        await member.timeout(60 * 1000, 'Błędna odpowiedź na pytanie regulaminowe');
+      }
+
       await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz od nowa zacząć. Kanał zostanie usunięty.`);
       regulationAnswers.delete(message.author.id);
       setTimeout(() => {
