@@ -208,8 +208,6 @@ client.on('messageCreate', async message => {
 });
 
 
-client.login('YOUR_BOT_TOKEN');
-
 // OBSŁUGA BŁĘDÓW KLIENTA
 client.on('error', error => {
   console.error('Błąd klienta:', error);
