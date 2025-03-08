@@ -264,7 +264,7 @@ client.on('messageCreate', async message => {
           }
         }
       } else {
-        await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz poczekać minutę przed ponowną próbą.`);
+        await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz od nowa zacząć.Kanał sam się usunie.`);
         regulationAnswers.delete(message.author.id);
       }
       setTimeout(() => {
