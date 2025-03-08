@@ -81,6 +81,8 @@ function heartbeat() {
   }, 30000);
 }
 
+const verificationCodes = new Map();
+
 client.on('messageCreate', async message => {
   if (message.content === '!panel') {
     const embed = new EmbedBuilder()
@@ -155,8 +157,8 @@ client.on('interactionCreate', async interaction => {
     }
     if (interaction.values[0] === 'verification_ticket') {
       try {
-        const verificationCodes = Array.from({ length: 6 }, () => Math.floor(10000000 + Math.random() * 90000000));
-        const chosenCode = verificationCodes[Math.floor(Math.random() * verificationCodes.length)];
+        const code = Math.floor(10000000 + Math.random() * 90000000);
+        verificationCodes.set(user.id, code);
         
         const ticketChannel = await guild.channels.create({
           name: `weryfikacja-${user.username}`,
@@ -171,8 +173,8 @@ client.on('interactionCreate', async interaction => {
 
         const verificationEmbed = new EmbedBuilder()
           .setTitle('🔍 **Weryfikacja**')
-          .setDescription('Aby zweryfikować swoją tożsamość, podaj poniższy kod w wiadomości:')
-          .addFields({ name: '🆔 Kod Weryfikacyjny:', value: `\`${chosenCode}\`` })
+          .setDescription('Aby zweryfikować swoją tożsamość, wpisz poniższy kod w wiadomości na tym kanale:')
+          .addFields({ name: '🆔 Kod Weryfikacyjny:', value: `\`${code}\`` })
           .setColor('#ff5733')
           .setFooter({ text: 'Prosimy o przepisanie kodu dokładnie!' });
 
@@ -185,6 +187,28 @@ client.on('interactionCreate', async interaction => {
     }
   }
 });
+
+client.on('messageCreate', async message => {
+  if (message.channel.name.startsWith('weryfikacja-') && verificationCodes.has(message.author.id)) {
+    const correctCode = verificationCodes.get(message.author.id);
+    if (message.content === correctCode.toString()) {
+      const role = message.guild.roles.cache.get('1300816261655302216');
+      if (role) {
+        const member = message.guild.members.cache.get(message.author.id);
+        if (member) {
+          await member.roles.add(role);
+          await message.channel.send(`✅ Gratulacje ${message.author}, pomyślnie zweryfikowano!`);
+          verificationCodes.delete(message.author.id);
+        }
+      }
+    } else {
+      await message.channel.send('❌ Kod niepoprawny, spróbuj ponownie.');
+    }
+  }
+});
+
+
+client.login('YOUR_BOT_TOKEN');
 
 // OBSŁUGA BŁĘDÓW KLIENTA
 client.on('error', error => {
