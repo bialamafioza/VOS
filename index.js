@@ -192,10 +192,10 @@ client.on('interactionCreate', async interaction => {
         });
 
         const questions = [
-          { question: 'Czy można spamić? ', answer: 'Nie' },
+          { question: 'Czy można spamić? ', answer: 'Nie' , 'nie' },
           { question: 'Czy można prosić o rangę?', answer: 'Nie' },
-          { question: 'Czy można podszywać się pod administrację?', answer: 'Nie' },
-          { question: 'Czy Administracja ma prawo wejść na kanał prywatny bądź Max (x) w celu skontrolowania graczy?', answer: 'Tak' }
+          { question: 'Czy można podszywać się pod administrację?', answer: 'Nie', 'nie' },
+          { question: 'Czy Administracja ma prawo wejść na kanał prywatny bądź Max (x) w celu skontrolowania graczy?', answer: 'Tak', 'tak'  }
         ];
 
         regulationAnswers.set(user.id, { questions, currentIndex: 0, correct: 0 });
