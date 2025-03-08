@@ -1,21 +1,3 @@
-/*
-
-☆.。.:*・°☆.。.:*・°☆.。.:*・°☆.。.:*・°☆
-                                                 
-  _________ ___ ___ ._______   _________    
- /   _____//   |   \|   \   \ /   /  _  \   
- \_____  \/    ~    \   |\   Y   /  /_\  \  
- /        \    Y    /   | \     /    |    \ 
-/_______  /\___|_  /|___|  \___/\____|__  / 
-        \/       \/                     \/  
-                    
-DISCORD :  https://discord.com/invite/xQF9f9yUEM                   
-YouTube : https://www.youtube.com/@GlaceYT                         
-                                                                       
-☆.。.:*・°☆.。.:*・°☆.。.:*・°☆.。.:*・°☆
-
-
-*/
 
 const { 
   Client, 
@@ -80,10 +62,6 @@ function heartbeat() {
     console.log(`\x1b[35m[ HEARTBEAT ]\x1b[0m Bot is alive at ${new Date().toLocaleTimeString()}`);
   }, 30000);
 }
-
-const { Client, Intents, ChannelType, PermissionsBitField, EmbedBuilder, StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
-
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS] });
 
 const verificationCodes = new Map();
 const regulationAnswers = new Map();
@@ -303,30 +281,3 @@ client.on('error', error => {
 });
 
 client.login(process.env.TOKEN);
-
-
-
-
-
-
-
-
-  
-/*
-
-☆.。.:*・°☆.。.:*・°☆.。.:*・°☆.。.:*・°☆
-                                                 
-  _________ ___ ___ ._______   _________    
- /   _____//   |   \|   \   \ /   /  _  \   
- \_____  \/    ~    \   |\   Y   /  /_\  \  
- /        \    Y    /   | \     /    |    \ 
-/_______  /\___|_  /|___|  \___/\____|__  / 
-        \/       \/                     \/  
-                    
-DISCORD :  https://discord.com/invite/xQF9f9yUEM                   
-YouTube : https://www.youtube.com/@GlaceYT                         
-                                                                       
-☆.。.:*・°☆.。.:*・°☆.。.:*・°☆.。.:*・°☆
-
-
-*/
