@@ -1,4 +1,3 @@
-
 const { 
   Client, 
   GatewayIntentBits, 
@@ -95,7 +94,7 @@ client.on('messageCreate', async message => {
           value: 'verification_ticket'
         },
         {
-          label: '📜 Test Regulaminu',
+          label: '📜 Regulaminu',
           description: 'Odpowiedz na pytania regulaminowe.',
           value: 'regulation_test'
         }
@@ -203,7 +202,7 @@ client.on('interactionCreate', async interaction => {
         await ticketChannel.send(`📜 **Regulamin** - Odpowiedz na pytania poprawnie, aby uzyskać rangę.`);
         await ticketChannel.send(questions[0].question);
 
-        await interaction.reply({ content: `📜 Test regulaminu został rozpoczęty: ${ticketChannel}`, ephemeral: true });
+        await interaction.reply({ content: `📜 regulaminu został rozpoczęty: ${ticketChannel}`, ephemeral: true });
       } catch (error) {
         console.error('Błąd podczas tworzenia kanału:', error);
         await interaction.reply({ content: '❌ Wystąpił błąd podczas tworzenia ticketu.', ephemeral: true });
@@ -246,7 +245,12 @@ client.on('messageCreate', async message => {
       if (member) {
         await member.timeout(60000, 'Niepoprawna odpowiedź na pytanie regulaminowe');
       }
-      await message.channel.send(`❌ Błędna odpowiedź. Jesteś wyciszony na 1 minutę.`);
+        await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz od nowa zacząć.Kanał sam się usunie.`);
+        regulationAnswers.delete(message.author.id);
+      }
+      setTimeout(() => {
+        message.channel.delete().catch(console.error);
+      }, 10000);
     }
 
     userData.currentIndex++;
