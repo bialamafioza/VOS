@@ -207,8 +207,81 @@ client.on('messageCreate', async message => {
     } else {
       await message.channel.send('❌ Kod niepoprawny, spróbuj ponownie.');
     }
+
+      if (interaction.customId === 'ticket_menu') {
+    if (interaction.values[0] === 'regulation_test') {
+      try {
+        const member = guild.members.cache.get(user.id);
+        if (member.roles.cache.has('1300816261655302216')) {
+          await member.roles.remove('1300816261655302216');
+        }
+
+        const ticketChannel = await guild.channels.create({
+          name: `regulamin-${user.username}`,
+          type: ChannelType.GuildText,
+          parent: '1302743323089309876',
+          permissionOverwrites: [
+            { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+            { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+            { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels] }
+          ]
+        });
+
+        const questions = [
+          { question: 'Czy można spamić? ', answer: 'Nie ' },
+          { question: 'Czy można prosić o rangę?', answer: 'Nie' },
+          { question: 'Czy można podszywać się pod administrację ', answer: 'Nie' },
+          { question: 'Czy Administracja ma prawo wejść na kanał prywatny bądź Max (x) w celu skontrolowania graczy. ?', answer: 'Tak' }
+        ];
+        
+        regulationAnswers.set(user.id, { questions, currentIndex: 0, correct: 0 });
+
+        await ticketChannel.send(`📜 **Regulamin** - Odpowiedz na pytania poprawnie, aby uzyskać rangę.`);
+        await ticketChannel.send(questions[0].question);
+
+        await interaction.reply({ content: `📜 Test regulaminu został rozpoczęty: ${ticketChannel}`, ephemeral: true });
+      } catch (error) {
+        console.error('Błąd podczas tworzenia kanału:', error);
+        await interaction.reply({ content: '❌ Wystąpił błąd podczas tworzenia ticketu.', ephemeral: true });
+      }
+    }
   }
 });
+
+client.on('messageCreate', async message => {
+  if (message.channel.name.startsWith('regulamin-') && regulationAnswers.has(message.author.id)) {
+    const userData = regulationAnswers.get(message.author.id);
+    if (!userData) return;
+
+    const { questions, currentIndex, correct } = userData;
+    if (message.content === questions[currentIndex].answer) {
+      userData.correct++;
+    }
+    userData.currentIndex++;
+
+    if (userData.currentIndex < questions.length) {
+      await message.channel.send(questions[userData.currentIndex].question);
+    } else {
+      if (userData.correct === questions.length) {
+        const role = message.guild.roles.cache.get('1300816260573040680');
+        if (role) {
+          const member = message.guild.members.cache.get(message.author.id);
+          if (member) {
+            await member.roles.add(role);
+            await message.channel.send(`✅ Gratulacje ${message.author}, zdałeś test regulaminu! Kanał zostanie usunięty za 10 sekund.`);
+          }
+        }
+      } else {
+        await message.channel.send(`❌ Niepoprawne odpowiedzi. Musisz poczekać minutę przed ponowną próbą.`);
+        regulationAnswers.delete(message.author.id);
+      }
+      setTimeout(() => {
+        message.channel.delete().catch(console.error);
+      }, 10000);
+    }
+  }
+});
+
 
 
 // OBSŁUGA BŁĘDÓW KLIENTA
