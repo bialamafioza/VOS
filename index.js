@@ -69,10 +69,10 @@ client.on('messageCreate', async message => {
   if (message.content === '!panel') {
     const embed = new EmbedBuilder()
       .setTitle('📩 **Witaj!**')
-      .setDescription('Wybierz opcję z listy, aby utworzyć ticket.')
+      .setDescription('Wybierz opcję z listy.')
       .setColor('#3498db')
       .setThumbnail('https://cdn-icons-png.flaticon.com/512/4712/4712031.png')
-      .setFooter({ text: 'Ticket Panel' });
+      .setFooter({ text: 'Panel' });
 
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId('ticket_menu')
