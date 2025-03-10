@@ -202,7 +202,7 @@ client.on('interactionCreate', async interaction => {
 
         regulationAnswers.set(user.id, { questions, currentIndex: 0, correct: 0 });
 
-        await ticketChannel.send(`📜 **Regulamin** - Odpowiedz na pytania poprawnie, aby uzyskać rangę.`);
+        await ticketChannel.send(`📜 **Regulamin** - Odpowiedz na pytania poprawnie, aby uzyskać rangę.(Pisz z Dużej liter np Nie,Tak) `);
         await ticketChannel.send(questions[0].question);
 
         await interaction.reply({ content: `📜 regulaminu został rozpoczęty: ${ticketChannel}`, ephemeral: true });
