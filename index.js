@@ -20,6 +20,11 @@ const client = new Client({
     GatewayIntentBits.MessageContent
   ],
 });
+const shopItems = [
+  { label: '💎 VIP', description: 'Kup specjalną rangę VIP.', value: 'buy_vip' },
+  { label: '🔑 Klucz Premium', description: 'Uzyskaj dostęp do ekskluzywnych funkcji.', value: 'buy_premium_key' },
+  { label: '🛡️ Ochrona Konta', description: 'Dodatkowe zabezpieczenia konta.', value: 'buy_account_protection' }
+];
 
 const app = express();
 const port = 3000;
@@ -97,6 +102,11 @@ client.on('messageCreate', async message => {
           label: '📜 Regulaminu',
           description: 'Odpowiedz na pytania regulaminowe.',
           value: 'regulation_test'
+        },
+        {
+          label: '🛒 Sklep',
+          description: 'Kup przedmioty w sklepie.',
+          value: 'shop'
         }
       ]);
 
@@ -281,7 +291,36 @@ client.on('messageCreate', async message => {
       }, 10000);
     }
   }
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isStringSelectMenu()) return;
+
+  if (interaction.customId === 'ticket_menu') {
+    if (interaction.values[0] === 'shop') {
+      const shopEmbed = new EmbedBuilder()
+        .setTitle('🛒 Sklep')
+        .setDescription('Wybierz przedmiot, który chcesz kupić.')
+        .setColor('#2ecc71');
+
+      const shopMenu = new StringSelectMenuBuilder()
+        .setCustomId('shop_menu')
+        .setPlaceholder('🛒 Wybierz przedmiot')
+        .addOptions(shopItems);
+
+      const row = new ActionRowBuilder().addComponents(shopMenu);
+      await interaction.reply({ embeds: [shopEmbed], components: [row], ephemeral: true });
+    }
+  }
+
+  if (interaction.customId === 'shop_menu') {
+    const item = shopItems.find(i => i.value === interaction.values[0]);
+    if (item) {
+      await interaction.reply({ content: `✅ Zakupiłeś **${item.label}**!`, ephemeral: true });
+    } else {
+      await interaction.reply({ content: '❌ Wystąpił błąd podczas zakupu.', ephemeral: true });
+    }
+  }
 });
+
 
 
 
