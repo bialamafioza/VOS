@@ -290,11 +290,7 @@ client.on('messageCreate', async message => {
         message.channel.delete().catch(console.error);
       }, 10000);
     }
-  }
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isStringSelectMenu()) return;
-
-  if (interaction.customId === 'ticket_menu') {
+  } 
     if (interaction.values[0] === 'shop') {
       const shopEmbed = new EmbedBuilder()
         .setTitle('🛒 Sklep')
@@ -320,7 +316,6 @@ client.on('interactionCreate', async interaction => {
     }
   }
 });
-
 
 
 
