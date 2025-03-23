@@ -290,21 +290,21 @@ client.on('messageCreate', async message => {
         message.channel.delete().catch(console.error);
       }, 10000);
     }
-  } 
-    if (interaction.values[0] === 'shop') {
-      const shopEmbed = new EmbedBuilder()
-        .setTitle('🛒 Sklep')
-        .setDescription('Wybierz przedmiot, który chcesz kupić.')
-        .setColor('#2ecc71');
+  }
 
-      const shopMenu = new StringSelectMenuBuilder()
-        .setCustomId('shop_menu')
-        .setPlaceholder('🛒 Wybierz przedmiot')
-        .addOptions(shopItems);
+  if (interaction.values[0] === 'shop') {
+    const shopEmbed = new EmbedBuilder()
+      .setTitle('🛒 Sklep')
+      .setDescription('Wybierz przedmiot, który chcesz kupić.')
+      .setColor('#2ecc71');
 
-      const row = new ActionRowBuilder().addComponents(shopMenu);
-      await interaction.reply({ embeds: [shopEmbed], components: [row], ephemeral: true });
-    }
+    const shopMenu = new StringSelectMenuBuilder()
+      .setCustomId('shop_menu')
+      .setPlaceholder('🛒 Wybierz przedmiot')
+      .addOptions(shopItems);
+
+    const row = new ActionRowBuilder().addComponents(shopMenu);
+    await interaction.reply({ embeds: [shopEmbed], components: [row], ephemeral: true });
   }
 
   if (interaction.customId === 'shop_menu') {
@@ -316,9 +316,6 @@ client.on('messageCreate', async message => {
     }
   }
 });
-
-
-
 
 // OBSŁUGA BŁĘDÓW KLIENTA
 client.on('error', error => {
