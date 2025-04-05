@@ -66,9 +66,10 @@ const verificationCodes = new Map();
 const regulationAnswers = new Map();
 
 const shopItems = [
-  { label: '💎 Serwer Discord', description: 'Kup Serwer Discord .', value: 'buy_vip' },
-  { label: '🔑 Strona Internetowa', description: 'Kup Stronę Internetową .', value: 'buy_premium_key' },
-  { label: '🛡️ Bot', description: 'Kup Własnego Bota.', value: 'buy_account_protection' }
+  { label: '💎 Serwer Discord', description: 'Kup Serwer Discord (Cena 5 zł) .', value: 'buy_vip' },
+  { label: '🔑 Strona Internetowa', description: 'Kup Stronę Internetową (Cena 5 zł) .', value: 'buy_premium_key' },
+  { label: '🛡️ Bot', description: 'Kup Własnego Bota(Cena 5 zł).', value: 'buy_account_protection' },
+  { label: '🛡️ Bot', description: 'Kup Własnego Bota(Cena 5 zł).', value: 'buy_account_protection' }
 ];
 
 client.on('messageCreate', async message => {
