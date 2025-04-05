@@ -66,9 +66,9 @@ const verificationCodes = new Map();
 const regulationAnswers = new Map();
 
 const shopItems = [
-  { label: '💎 VIP', description: 'Kup specjalną rangę VIP.', value: 'buy_vip' },
-  { label: '🔑 Klucz Premium', description: 'Uzyskaj dostęp do ekskluzywnych funkcji.', value: 'buy_premium_key' },
-  { label: '🛡️ Ochrona Konta', description: 'Dodatkowe zabezpieczenia konta.', value: 'buy_account_protection' }
+  { label: '💎 Serwer Discord', description: 'Kup Serwer Discord .', value: 'buy_vip' },
+  { label: '🔑 Strona Internetowa', description: 'Kup Stronę Internetową .', value: 'buy_premium_key' },
+  { label: '🛡️ Bot', description: 'Kup Własnego Bota.', value: 'buy_account_protection' }
 ];
 
 client.on('messageCreate', async message => {
