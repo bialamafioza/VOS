@@ -46,10 +46,12 @@ client.once('ready', async () => {
 
 function updateStatus() {
   const currentStatus = statusMessages[currentStatusIndex];
+
   client.user.setPresence({
     activities: [{ name: currentStatus, type: ActivityType.Playing }],
     status: statusType,
   });
+
   console.log(`\x1b[33m[ STATUS ]\x1b[0m Updated status to: ${currentStatus} (${statusType})`);
   currentStatusIndex = (currentStatusIndex + 1) % statusMessages.length;
 }
@@ -62,6 +64,16 @@ function heartbeat() {
 
 const verificationCodes = new Map();
 const regulationAnswers = new Map();
+const LOG_CHANNEL_ID = '1358020433374482453';
+
+async function sendLog(guild, content) {
+  const logChannel = guild.channels.cache.get(LOG_CHANNEL_ID);
+  if (logChannel) {
+    logChannel.send(`📘 ${content}`);
+  } else {
+    console.warn('[ WARN ] Kanał logów nie został znaleziony.');
+  }
+}
 
 const shopItems = [
   { label: '💎 VIP', description: 'Kup specjalną rangę VIP.', value: 'buy_vip' },
@@ -91,57 +103,6 @@ client.on('messageCreate', async message => {
     const row = new ActionRowBuilder().addComponents(selectMenu);
     await message.channel.send({ embeds: [embed], components: [row] });
   }
-
-  // Obsługa weryfikacji kodu
-  if (message.channel.name?.startsWith('weryfikacja-') && verificationCodes.has(message.author.id)) {
-    const code = verificationCodes.get(message.author.id);
-    if (message.content === code.toString()) {
-      const role = message.guild.roles.cache.get('1300816261655302216'); // rola: zweryfikowany
-      const member = message.guild.members.cache.get(message.author.id);
-      if (role && member) {
-        await member.roles.add(role);
-        await message.channel.send(`✅ Zweryfikowano! Kanał zostanie usunięty za 10s.`);
-        verificationCodes.delete(message.author.id);
-        setTimeout(() => message.channel.delete().catch(console.error), 10000);
-      }
-    } else {
-      await message.channel.send('❌ Niepoprawny kod. Spróbuj ponownie.');
-    }
-  }
-
-  // Obsługa testu regulaminowego
-  if (message.channel.name?.startsWith('regulamin-') && regulationAnswers.has(message.author.id)) {
-    const data = regulationAnswers.get(message.author.id);
-    const question = data.questions[data.currentIndex];
-
-    if (message.content === question.answer) {
-      data.correct++;
-    } else {
-      const member = message.guild.members.cache.get(message.author.id);
-      if (member) {
-        await member.timeout(60_000, 'Błędna odpowiedź w teście regulaminu');
-      }
-      await message.channel.send('❌ Błąd. Musisz zacząć od nowa.');
-      regulationAnswers.delete(message.author.id);
-      return setTimeout(() => message.channel.delete().catch(console.error), 5000);
-    }
-
-    data.currentIndex++;
-    if (data.currentIndex < data.questions.length) {
-      await message.channel.send(data.questions[data.currentIndex].question);
-    } else {
-      if (data.correct === data.questions.length) {
-        const role = message.guild.roles.cache.get('1300816260573040680'); // rola po zdaniu testu
-        const member = message.guild.members.cache.get(message.author.id);
-        if (role && member) await member.roles.add(role);
-        await message.channel.send('✅ Gratulacje! Zdałeś test. Kanał zostanie usunięty za 10s.');
-      } else {
-        await message.channel.send('❌ Niepoprawne odpowiedzi. Zacznij od nowa.');
-      }
-      regulationAnswers.delete(message.author.id);
-      setTimeout(() => message.channel.delete().catch(console.error), 10000);
-    }
-  }
 });
 
 client.on('interactionCreate', async interaction => {
@@ -159,57 +120,60 @@ client.on('interactionCreate', async interaction => {
         permissionOverwrites: [
           { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
           { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-          { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel] }
+          { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels] }
         ]
       });
 
-      const embed = new EmbedBuilder()
-        .setTitle('🎟️ Ticket')
-        .setDescription('Opisz swój problem:')
+      const ticketFormEmbed = new EmbedBuilder()
+        .setTitle('🎟️ **Ticket - Potrzebuję Pomocy!** 🎟️')
+        .setDescription('Proszę wypełnić poniższy formularz...')
         .setColor('#ffcc00');
 
-      await ticketChannel.send({ embeds: [embed] });
+      await ticketChannel.send({ embeds: [ticketFormEmbed] });
       await interaction.reply({ content: `📩 Ticket utworzony: ${ticketChannel}`, ephemeral: true });
+      await sendLog(guild, `🎟️ Ticket utworzony przez ${user.tag}`);
     }
 
     if (interaction.values[0] === 'verification_ticket') {
       const code = Math.floor(10000000 + Math.random() * 90000000);
       verificationCodes.set(user.id, code);
 
-      const channel = await guild.channels.create({
+      const ticketChannel = await guild.channels.create({
         name: `weryfikacja-${user.username}`,
         type: ChannelType.GuildText,
         parent: '1302743323089309876',
         permissionOverwrites: [
           { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
           { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-          { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel] }
+          { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels] }
         ]
       });
 
-      const embed = new EmbedBuilder()
-        .setTitle('🔍 Weryfikacja')
-        .setDescription(`Wpisz poniższy kod na tym kanale:\n\n\`${code}\``)
+      const verificationEmbed = new EmbedBuilder()
+        .setTitle('🔍 **Weryfikacja**')
+        .setDescription(`Twój kod: \`${code}\``)
         .setColor('#ff5733');
 
-      await channel.send({ embeds: [embed] });
-      await interaction.reply({ content: `🔍 Kanał weryfikacyjny utworzony: ${channel}`, ephemeral: true });
+      await ticketChannel.send({ embeds: [verificationEmbed] });
+      await interaction.reply({ content: `🔍 Kanał weryfikacyjny: ${ticketChannel}`, ephemeral: true });
+      await sendLog(guild, `🔍 Weryfikacja rozpoczęta przez ${user.tag} (kod: ${code})`);
     }
 
     if (interaction.values[0] === 'regulation_test') {
       const member = guild.members.cache.get(user.id);
       if (!member.roles.cache.has('1300816261655302216')) {
-        return interaction.reply({ content: '❌ Musisz być zweryfikowany, aby rozpocząć test.', ephemeral: true });
+        await interaction.reply({ content: '❌ Musisz mieć rangę zweryfikowany.', ephemeral: true });
+        return;
       }
 
-      const channel = await guild.channels.create({
+      const ticketChannel = await guild.channels.create({
         name: `regulamin-${user.username}`,
         type: ChannelType.GuildText,
         parent: '1302743323089309876',
         permissionOverwrites: [
           { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
           { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-          { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel] }
+          { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels] }
         ]
       });
 
@@ -222,9 +186,10 @@ client.on('interactionCreate', async interaction => {
 
       regulationAnswers.set(user.id, { questions, currentIndex: 0, correct: 0 });
 
-      await channel.send('📜 **Test Regulaminowy**\nOdpowiedz na pytania. Odpowiadaj „Tak” lub „Nie”.');
-      await channel.send(questions[0].question);
-      await interaction.reply({ content: `📜 Test regulaminowy rozpoczęty: ${channel}`, ephemeral: true });
+      await ticketChannel.send('📜 Test regulaminu. Pisz odpowiedzi: Tak/Nie.');
+      await ticketChannel.send(questions[0].question);
+      await interaction.reply({ content: `📜 Kanał testowy: ${ticketChannel}`, ephemeral: true });
+      await sendLog(guild, `📜 Test regulaminowy rozpoczęty przez ${user.tag}`);
     }
 
     if (interaction.values[0] === 'shop_menu') {
@@ -244,17 +209,17 @@ client.on('interactionCreate', async interaction => {
   }
 
   if (interaction.customId === 'shop_selection') {
-    const selected = shopItems.find(i => i.value === interaction.values[0]);
+    const selected = shopItems.find(item => item.value === interaction.values[0]);
     if (!selected) return;
 
-    const shopChannel = await guild.channels.create({
-      name: `zakup-${user.username}`,
+    const shopChannel = await interaction.guild.channels.create({
+      name: `zakup-${interaction.user.username}`,
       type: ChannelType.GuildText,
       parent: '1302743323089309876',
       permissionOverwrites: [
-        { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-        { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-        { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel] }
+        { id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+        { id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+        { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels] }
       ]
     });
 
@@ -264,7 +229,8 @@ client.on('interactionCreate', async interaction => {
       .setColor('#f1c40f');
 
     await shopChannel.send({ embeds: [purchaseEmbed] });
-    await interaction.reply({ content: `🛒 Kanał zakupu utworzony: ${shopChannel}`, ephemeral: true });
+    await interaction.reply({ content: `🛒 Kanał zakupu: ${shopChannel}`, ephemeral: true });
+    await sendLog(interaction.guild, `🛒 Zakup rozpoczęty przez ${interaction.user.tag}: ${selected.label}`);
   }
 });
 
