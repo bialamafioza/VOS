@@ -27,7 +27,8 @@ const app = express();
 const port = 3000;
 const ticketCategoryId = '1302743323089309876'; // Kategoria do ticketów
 const ticketLogChannelId = '1358020433374482453'; // <- Uzupełnij ID kanału logów
-
+const moderatorRoleId = '1300816251706409020';
+  
 app.get('/', (req, res) => {
   const imagePath = path.join(__dirname, 'index.html');
   res.sendFile(imagePath);
