@@ -269,17 +269,19 @@ const row = new ActionRowBuilder().addComponents(timeMenu);
 
 
 
-const timeCollector = m.channel.createMessageComponentCollector
-  filter: i => i.user.id === interaction.user.id,
-  time: 15000
-)};
+  const timeCollector = m.channel.createMessageComponentCollector({
+    filter: i => i.user.id === interaction.user.id,
+    time: 15000
+  });
 
-timeCollector.on('collect', async i => {
-  await i.deferUpdate();
-  const duration = parseInt(i.values[0]);
+  timeCollector.on('collect', async i => {
+    await i.deferUpdate();
+    const duration = parseInt(i.values[0]);
 
-  await target.timeout(duration, reason);
-  await m.channel.send(`🔇 ${target} został wyciszony na ${Math.floor(duration / 60000)} min. Powód: ${reason}`);
+    await target.timeout(duration, reason);
+    await m.channel.send(`🔇 ${target} został wyciszony na ${Math.floor(duration / 60000)} min. Powód: ${reason}`);
+  });
+});
 
   if (interaction.customId === 'ticket_menu') {
     if (selection === 'create_ticket') {
