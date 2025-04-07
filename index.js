@@ -297,7 +297,7 @@ const timeMenu = new StringSelectMenuBuilder()
 
 const row = new ActionRowBuilder().addComponents(timeMenu);
 
-await m.reply({ content: '⏱️ Wybierz czas wyciszenia:', components: [row] });
+
 
 const timeCollector = m.channel.createMessageComponentCollector({
   filter: i => i.user.id === interaction.user.id,
