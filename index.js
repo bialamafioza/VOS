@@ -96,27 +96,30 @@ client.on('messageCreate', async message => {
   }
 });
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isStringSelectMenu()) return;
+  if (!interaction.isButton()) return;
 
-  const user = interaction.user;
-  const guild = interaction.guild;
+  if (interaction.customId === 'close_ticket') {
+    const user = interaction.user;
+    const channel = interaction.channel;
+    const guild = interaction.guild;
+    
+    const ticketOwner = channel.name.split('-')[1];  // Przyjmujemy, że nazwa kanału to np. "ticket-username"
+    
+    const reason = `Zamknięty przez ${user.tag} (${user.id}) o ${new Date().toLocaleString()}`;
+    const logChannel = guild.channels.cache.get('1358020433374482453'); // Twój kanał logów
 
-  if (interaction.customId === 'ticket_menu') {
-    if (interaction.values[0] === 'create_ticket') {
-      const existingChannel = guild.channels.cache.find(c => c.name === `ticket-${user.id}`);
-      if (existingChannel) {
-        return interaction.reply({ content: 'Masz już otwarty ticket!', ephemeral: true });
-      }
+    await channel.send(`📪 Ticket zamknięty przez ${user.tag}. Kanał zostanie usunięty za 5 sekund.`);
+    
+    if (logChannel) {
+      logChannel.send(`🗂️ Ticket #${channel.name} zamknięty przez ${user.tag}. Dotyczy użytkownika: ${ticketOwner}.\n📅 **Data zamknięcia:** ${new Date().toLocaleString()}\n**Powód:** ${reason}`);
+    }
 
-      const ticketChannel = await guild.channels.create({
-        name: `ticket-${user.id}`,
-        type: ChannelType.GuildText,
-        permissionOverwrites: [
-          { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-          { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-          { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
-        ]
-      });
+    setTimeout(() => {
+      channel.delete(reason).catch(console.error);
+    }, 5000);
+  }
+});
+
 
       const closeButton = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
