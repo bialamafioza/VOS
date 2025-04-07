@@ -176,7 +176,7 @@ client.on('interactionCreate', async interaction => {
   if (interaction.customId !== 'mod_action') return;
 
   const member = interaction.guild.members.cache.get(interaction.user.id);
-  if (!member.roles.cache.has('1358020500000000000')) {
+  if (!member.roles.cache.has('1300816251706409020')) {
     return interaction.reply({ content: '❌ Nie masz uprawnień.', ephemeral: true });
   }
 
