@@ -117,27 +117,6 @@ async function handleCloseTicket(interaction) {
   }, 5000);
 }
 
-async function handleSelectMenu(interaction) {
-  if (interaction.customId === 'ticket_menu') {
-    switch (interaction.values[0]) {
-      case 'create_ticket':
-        await createTicket(interaction);
-        break;
-      case 'verification_ticket':
-        await handleVerification(interaction);
-        break;
-      case 'regulation_test':
-        await handleRegulation(interaction);
-        break;
-      case 'mod_panel':
-        await handleModPanel(interaction);
-        break;
-      default:
-        break;
-    }
-  }
-}
-
 async function createTicket(interaction) {
   const ticketChannel = await interaction.guild.channels.create(`ticket-${interaction.user.username}`, {
     type: ChannelType.GuildText, // Poprawione
