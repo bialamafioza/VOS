@@ -192,104 +192,74 @@ client.on('interactionCreate', async interaction => {
 
     if (!target) return m.reply('❌ Nie podano użytkownika.');
 
-    if (action === 'mute_user') {
-      await target.timeout(60 * 60 * 1000, reason);
-      m.reply(`🔇 Użytkownik ${target} został wyciszony. Powód: ${reason}`);
-    } else if (action === 'kick_user') {
-      await target.kick(reason);
-      m.reply(`❌ Użytkownik ${target} został wyrzucony. Powód: ${reason}`);
-    } else if (action === 'ban_user') {
-      await target.ban({ reason });
-      m.reply(`🔨 Użytkownik ${target} został zbanowany. Powód: ${reason}`);
-    }
+    const confirmEmbed = new EmbedBuilder()
+      .setTitle('❗ Potwierdzenie akcji')
+      .setDescription(`Czy na pewno chcesz wykonać akcję **${action.replace('_', ' ')}** na **${target.user.tag}**?\n\n**Powód:** ${reason}`)
+      .setColor('#f39c12');
 
-    const logChannel = interaction.guild.channels.cache.get('1358020433374482453');
-    if (logChannel) {
-      const logEmbed = new EmbedBuilder()
-        .setTitle(`🛡️ Akcja Moderacyjna`)
-        .addFields(
-          { name: 'Moderator', value: `${interaction.user.tag}`, inline: true },
-          { name: 'Użytkownik', value: `${target.user.tag}`, inline: true },
-          { name: 'Akcja', value: action.replace('_', ' '), inline: true },
-          { name: 'Powód', value: reason },
-          { name: 'Czas', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
-        )
-        .setColor('#e67e22');
+    const confirmButton = new ButtonBuilder()
+      .setCustomId('confirm_action')
+      .setLabel('✅ Potwierdź')
+      .setStyle(ButtonStyle.Success);
 
-      logChannel.send({ embeds: [logEmbed] });
-    }
-collector.on('collect', async m => {
-  const args = m.content.split(' ');
-  const target = m.mentions.members.first();
-  const reason = args.slice(1).join(' ') || 'Brak powodu';
+    const cancelButton = new ButtonBuilder()
+      .setCustomId('cancel_action')
+      .setLabel('❌ Anuluj')
+      .setStyle(ButtonStyle.Danger);
 
-  if (!target) return m.reply('❌ Nie podano użytkownika.');
+    const row = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
 
-  const confirmEmbed = new EmbedBuilder()
-    .setTitle('❗ Potwierdzenie akcji')
-    .setDescription(`Czy na pewno chcesz wykonać akcję **${action.replace('_', ' ')}** na **${target.user.tag}**?\n\n**Powód:** ${reason}`)
-    .setColor('#f39c12');
+    const confirmationMsg = await m.reply({ embeds: [confirmEmbed], components: [row] });
 
-  const confirmButton = new ButtonBuilder()
-    .setCustomId('confirm_action')
-    .setLabel('✅ Potwierdź')
-    .setStyle(ButtonStyle.Success);
+    const buttonFilter = i => i.user.id === interaction.user.id;
+    const buttonCollector = confirmationMsg.createMessageComponentCollector({ filter: buttonFilter, time: 30000 });
 
-  const cancelButton = new ButtonBuilder()
-    .setCustomId('cancel_action')
-    .setLabel('❌ Anuluj')
-    .setStyle(ButtonStyle.Danger);
+    buttonCollector.on('collect', async i => {
+      await i.deferUpdate();
 
-  const row = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
-
-  const confirmationMsg = await m.reply({ embeds: [confirmEmbed], components: [row] });
-
-  const buttonFilter = i => i.user.id === interaction.user.id;
-  const buttonCollector = confirmationMsg.createMessageComponentCollector({ filter: buttonFilter, time: 30000 });
-
-  buttonCollector.on('collect', async i => {
-    await i.deferUpdate();
-
-    if (i.customId === 'cancel_action') {
-      await m.reply('❌ Akcja została anulowana.');
-      return;
-    }
-
-    try {
-      if (action === 'mute_user') {
-        await target.timeout(60 * 60 * 1000, reason);
-        await m.reply(`🔇 Użytkownik ${target} został wyciszony. Powód: ${reason}`);
-      } else if (action === 'kick_user') {
-        await target.kick(reason);
-        await m.reply(`❌ Użytkownik ${target} został wyrzucony. Powód: ${reason}`);
-      } else if (action === 'ban_user') {
-        await target.ban({ reason });
-        await m.reply(`🔨 Użytkownik ${target} został zbanowany. Powód: ${reason}`);
+      if (i.customId === 'cancel_action') {
+        await m.reply('❌ Akcja została anulowana.');
+        return;
       }
 
-      const logChannel = interaction.guild.channels.cache.get('1358020433374482453');
-      if (logChannel) {
-        const logEmbed = new EmbedBuilder()
-          .setTitle('🛡️ Akcja Moderacyjna')
-          .addFields(
-            { name: 'Moderator', value: `${interaction.user.tag}`, inline: true },
-            { name: 'Użytkownik', value: `${target.user.tag}`, inline: true },
-            { name: 'Akcja', value: action.replace('_', ' '), inline: true },
-            { name: 'Powód', value: reason },
-            { name: 'Czas', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
-          )
-          .setColor('#e67e22');
+      try {
+        if (action === 'mute_user') {
+          await target.timeout(60 * 60 * 1000, reason);
+          await m.reply(`🔇 Użytkownik ${target} został wyciszony. Powód: ${reason}`);
+        } else if (action === 'kick_user') {
+          await target.kick(reason);
+          await m.reply(`❌ Użytkownik ${target} został wyrzucony. Powód: ${reason}`);
+        } else if (action === 'ban_user') {
+          await target.ban({ reason });
+          await m.reply(`🔨 Użytkownik ${target} został zbanowany. Powód: ${reason}`);
+        }
 
-        logChannel.send({ embeds: [logEmbed] });
+        const logChannel = interaction.guild.channels.cache.get('1358020433374482453');
+        if (logChannel) {
+          const logEmbed = new EmbedBuilder()
+            .setTitle('🛡️ Akcja Moderacyjna')
+            .addFields(
+              { name: 'Moderator', value: `${interaction.user.tag}`, inline: true },
+              { name: 'Użytkownik', value: `${target.user.tag}`, inline: true },
+              { name: 'Akcja', value: action.replace('_', ' '), inline: true },
+              { name: 'Powód', value: reason },
+              { name: 'Czas', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
+            )
+            .setColor('#e67e22');
+
+          logChannel.send({ embeds: [logEmbed] });
+        }
+      } catch (err) {
+        console.error(err);
+        await m.reply('❌ Nie udało się wykonać akcji. Sprawdź uprawnienia bota.');
       }
-    } catch (err) {
-      console.error(err);
-      await m.reply('❌ Nie udało się wykonać akcji. Sprawdź uprawnienia bota.');
-    }
- 
+    });
 
-  buttonCollector.on('end', collected => {
-    confirmationMsg.edit({ components: [] }).catch(() => {});
+    buttonCollector.on('end', collected => {
+      confirmationMsg.edit({ components: [] }).catch(() => {});
+    });
+  });
+    
 const timeMenu = new StringSelectMenuBuilder()
   .setCustomId('mute_duration')
   .setPlaceholder('⏱️ Wybierz czas wyciszenia')
