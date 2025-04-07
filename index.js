@@ -76,9 +76,10 @@ const muteTimes = [
 ];
 
 const shopItems = [
-  { label: '💎 VIP', description: 'Kup specjalną rangę VIP.', value: 'buy_vip' },
-  { label: '🔑 Klucz Premium', description: 'Uzyskaj dostęp do ekskluzywnych funkcji.', value: 'buy_premium_key' },
-  { label: '🛡️ Ochrona Konta', description: 'Dodatkowe zabezpieczenia konta.', value: 'buy_account_protection' }
+  { label: '💎 Discord', description: 'Własny serwer discord (Cena 5zł).', value: 'buy_discord' },
+  { label: '🔑 Storna Internetowa ', description: 'Własna Strona Internetowa (Cena 5zł).', value: 'buy_strona' },
+  { label: '🛡️ Bot', description: 'Własny Bot (Cena 5zł).', value: 'buy_Bot' },
+  { label: '📦 Zestaw', description: 'Wszystkie Opcje (Cena 10zł).', value: 'buy_Bot' }
 ];
 
 client.on('messageCreate', async message => {
