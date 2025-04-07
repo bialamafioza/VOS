@@ -5,10 +5,9 @@ const {
   ActionRowBuilder, 
   StringSelectMenuBuilder, 
   EmbedBuilder, 
-  PermissionsBitField, 
-  ChannelType, 
   ButtonBuilder, 
-  ButtonStyle 
+  ButtonStyle,
+  ChannelType // Dodaj ten import
 } = require('discord.js');
 
 require('dotenv').config();
@@ -34,20 +33,13 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`\x1b[36m[ SERVER ]\x1b[0m \x1b[32m SH : http://localhost:${port} ✅\x1b[0m`);
 });
+
 const statusMessages = ["🎧 Biala Mafioza", "🎮 Biala Mafioza"];
 const statusType = 'online'; 
 let currentStatusIndex = 0;
 
-const verificationCodes = new Map();
-const regulationAnswers = new Map();
-
 const logChannelId = '1358020433374482453';
-
-const shopItems = [
-  { label: '💎 VIP', description: 'Kup specjalną rangę VIP.', value: 'buy_vip' },
-  { label: '🔑 Klucz Premium', description: 'Uzyskaj dostęp do ekskluzywnych funkcji.', value: 'buy_premium_key' },
-  { label: '🛡️ Ochrona Konta', description: 'Dodatkowe zabezpieczenia konta.', value: 'buy_account_protection' }
-];
+const moderatorRoleId = '1300816251706409020'; // Podmień na prawdziwe ID rangi moderatora
 
 client.once('ready', async () => {
   console.log(`Zalogowano jako ${client.user.tag}`);
@@ -71,6 +63,7 @@ function heartbeat() {
     console.log(`\x1b[35m[ HEARTBEAT ]\x1b[0m Bot is alive at ${new Date().toLocaleTimeString()}`);
   }, 30000);
 }
+
 client.on('messageCreate', async message => {
   if (message.content === '!panel') {
     const embed = new EmbedBuilder()
@@ -95,225 +88,123 @@ client.on('messageCreate', async message => {
     await message.channel.send({ embeds: [embed], components: [row] });
   }
 });
+
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isButton()) return;
-
-  if (interaction.customId === 'close_ticket') {
-    const user = interaction.user;
-    const channel = interaction.channel;
-    const guild = interaction.guild;
-    
-    const ticketOwner = channel.name.split('-')[1];  // Przyjmujemy, że nazwa kanału to np. "ticket-username"
-    
-    const reason = `Zamknięty przez ${user.tag} (${user.id}) o ${new Date().toLocaleString()}`;
-    const logChannel = guild.channels.cache.get('1358020433374482453'); // Twój kanał logów
-
-    await channel.send(`📪 Ticket zamknięty przez ${user.tag}. Kanał zostanie usunięty za 5 sekund.`);
-    
-    if (logChannel) {
-      logChannel.send(`🗂️ Ticket #${channel.name} zamknięty przez ${user.tag}. Dotyczy użytkownika: ${ticketOwner}.\n📅 **Data zamknięcia:** ${new Date().toLocaleString()}\n**Powód:** ${reason}`);
+  if (interaction.isButton()) {
+    if (interaction.customId === 'close_ticket') {
+      await handleCloseTicket(interaction);
     }
-
-    setTimeout(() => {
-      channel.delete(reason).catch(console.error);
-    }, 5000);
+  } else if (interaction.isStringSelectMenu()) {
+    await handleSelectMenu(interaction);
   }
 });
 
+async function handleCloseTicket(interaction) {
+  const user = interaction.user;
+  const channel = interaction.channel;
+  const ticketOwner = channel.name.split('-')[1];  
+  const reason = `Zamknięty przez ${user.tag} (${user.id}) o ${new Date().toLocaleString()}`;
+  const logChannel = interaction.guild.channels.cache.get(logChannelId); 
 
-      const closeButton = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('close_ticket')
-          .setLabel('Zamknij Ticket')
-          .setStyle(ButtonStyle.Danger)
-      );
+  await channel.send(`📪 Ticket zamknięty przez ${user.tag}. Kanał zostanie usunięty za 5 sekund.`);
+  
+  if (logChannel) {
+    logChannel.send(`🗂️ Ticket #${channel.name} zamknięty przez ${user.tag}. Dotyczy użytkownika: ${ticketOwner}.\n📅 **Data zamknięcia:** ${new Date().toLocaleString()}\n**Powód:** ${reason}`);
+  }
 
-      const ticketEmbed = new EmbedBuilder()
-        .setTitle('🎫 Ticket otwarty')
-        .setDescription('Zespół zaraz się Tobą zajmie.\n\nKliknij poniżej, aby zamknąć ticket.')
-        .setColor('#3498db');
+  setTimeout(() => {
+    channel.delete(reason).catch(console.error);
+  }, 5000);
+}
 
-      await ticketChannel.send({ content: `<@${user.id}>`, embeds: [ticketEmbed], components: [closeButton] });
-
-      const logEmbed = new EmbedBuilder()
-        .setTitle('📂 Ticket utworzony')
-        .setDescription(`Użytkownik ${user.tag} otworzył ticket.`)
-        .addFields(
-          { name: 'ID użytkownika', value: user.id, inline: true },
-          { name: 'Kanał', value: `<#${ticketChannel.id}>`, inline: true },
-          { name: 'Czas', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
-        )
-        .setColor('#2ecc71');
-
-      const logChannel = guild.channels.cache.get(logChannelId);
-      if (logChannel) logChannel.send({ embeds: [logEmbed] });
-
-      await interaction.reply({ content: `✅ Ticket został otwarty: ${ticketChannel}`, ephemeral: true });
+async function handleSelectMenu(interaction) {
+  if (interaction.customId === 'ticket_menu') {
+    switch (interaction.values[0]) {
+      case 'create_ticket':
+        await createTicket(interaction);
+        break;
+      case 'verification_ticket':
+        await handleVerification(interaction);
+        break;
+      case 'regulation_test':
+        await handleRegulation(interaction);
+        break;
+      case 'mod_panel':
+        await handleModPanel(interaction);
+        break;
+      default:
+        break;
     }
   }
-});
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isButton()) return;
+}
 
-  if (interaction.customId === 'close_ticket') {
-    await interaction.reply({
-      content: '🛑 Czy na pewno chcesz zamknąć ticket?',
-      components: [
-        new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId('confirm_close')
-            .setLabel('Tak, zamknij')
-            .setStyle(ButtonStyle.Danger),
-          new ButtonBuilder()
-            .setCustomId('cancel_close')
-            .setLabel('Anuluj')
-            .setStyle(ButtonStyle.Secondary)
-        )
-      ],
-      ephemeral: true
-    });
-  }
-
-  if (interaction.customId === 'confirm_close') {
-    const reason = 'Zamknięto przez użytkownika'; // Można tu zrobić prompt na własny powód
-
-    const closedEmbed = new EmbedBuilder()
-      .setTitle('🎟️ Ticket zamknięty')
-      .addFields(
-        { name: 'Zamknięty przez', value: `<@${interaction.user.id}>`, inline: true },
-        { name: 'Czas', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true },
-        { name: 'Powód', value: reason }
-      )
-      .setColor('#e74c3c');
-
-    const logChannel = interaction.guild.channels.cache.get(logChannelId);
-    if (logChannel) await logChannel.send({ embeds: [closedEmbed] });
-
-    const channel = interaction.channel;
-    setTimeout(() => {
-      channel.delete().catch(err => console.error('Błąd przy zamykaniu kanału:', err));
-    }, 5000);
-
-    await interaction.update({ content: '✅ Ticket zostanie zamknięty za 5 sekund.', components: [] });
-  }
-
-  if (interaction.customId === 'cancel_close') {
-    await interaction.update({ content: '❎ Zamknięcie ticketu anulowane.', components: [] });
-  }
-});
-const moderatorRoleId = '1300816251706409020'; // Podmień na prawdziwe ID rangi moderatora
-
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isStringSelectMenu()) return;
-
-  if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'mod_panel') {
-    if (!interaction.member.roles.cache.has(moderatorRoleId)) {
-      return interaction.reply({ content: '❌ Nie masz dostępu do panelu moderatora.', ephemeral: true });
-    }
-
-    const modMenu = new StringSelectMenuBuilder()
-      .setCustomId('mod_action_menu')
-      .setPlaceholder('🛠️ Wybierz akcję moderacyjną')
-      .addOptions([
-        { label: '🔇 Wycisz użytkownika', value: 'mute_user' },
-        { label: '👢 Wyrzuć użytkownika', value: 'kick_user' },
-        { label: '⛔ Zbanuj użytkownika', value: 'ban_user' }
-      ]);
-
-    const row = new ActionRowBuilder().addComponents(modMenu);
-
-    await interaction.reply({ content: '🛠️ Panel moderatora:', components: [row], ephemeral: true });
-  }
-});
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isStringSelectMenu()) return;
-  if (interaction.customId !== 'mod_action_menu') return;
-
-  const selected = interaction.values[0];
-  const modActionName = {
-    mute_user: 'Wycisz',
-    kick_user: 'Wyrzuć',
-    ban_user: 'Zbanuj'
-  };
-
-  await interaction.reply({
-    content: `🔧 Podaj ID użytkownika do akcji: ${modActionName[selected]}\n(Na razie system testowy - brak działania)`,
-    ephemeral: true
+async function createTicket(interaction) {
+  const ticketChannel = await interaction.guild.channels.create(`ticket-${interaction.user.username}`, {
+    type: ChannelType.GuildText, // Poprawione
+    permissionOverwrites: [
+      {
+        id: interaction.guild.id,
+        deny: ['VIEW_CHANNEL'],
+      },
+      {
+        id: interaction.user.id,
+        allow: ['VIEW_CHANNEL'],
+      },
+    ],
   });
-const verificationCodes = new Map();  // Mapa przechowująca kody weryfikacyjne
 
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isStringSelectMenu()) return;
+  const closeButton = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('close_ticket')
+      .setLabel('Zamknij Ticket')
+      .setStyle(ButtonStyle.Danger)
+  );
 
-  // Wybór opcji 'Weryfikacja' w panelu
-  if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'verification_ticket') {
-    const embed = new EmbedBuilder()
-      .setTitle('🔍 **Weryfikacja**')
-      .setDescription('Wpisz kod weryfikacyjny, aby potwierdzić swoją tożsamość.')
-      .setColor('#3498db');
+  const ticketEmbed = new EmbedBuilder()
+    .setTitle('🎫 Ticket otwarty')
+    .setDescription('Zespół zaraz się Tobą zajmie.\n\nKliknij poniżej, aby zamknąć ticket.')
+    .setColor('#3498db');
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+  await ticketChannel.send({ content: `<@${interaction.user.id}>`, embeds: [ticketEmbed], components: [closeButton] });
+  await interaction.reply({ content: `✅ Ticket został otwarty: ${ticketChannel}`, ephemeral: true });
+}
 
-    // Wysyłanie wiadomości do użytkownika z prośbą o podanie kodu
-    await interaction.user.send('🔑 Proszę podać swój kod weryfikacyjny.');
+async function handleVerification(interaction) {
+  const embed = new EmbedBuilder()
+    .setTitle('🔍 **Weryfikacja**')
+    .setDescription('Wpisz kod weryfikacyjny, aby potwierdzić swoją tożsamość.')
+    .setColor('#3498db');
 
-    const filter = (response) => response.author.id === interaction.user.id;
-    const collector = interaction.user.dmChannel.createMessageCollector({ filter, time: 60000 });
+  await interaction.reply({ embeds: [embed], ephemeral: true });
+  await interaction.user.send('🔑 Proszę podać swój kod weryfikacyjny.');
+}
 
-    collector.on('collect', (message) => {
-      if (verificationCodes.has(message.content)) {
-        interaction.followUp({ content: '✅ Weryfikacja zakończona pomyślnie!', ephemeral: true });
-        collector.stop();
-      } else {
-        interaction.followUp({ content: '❌ Niepoprawny kod. Spróbuj ponownie.', ephemeral: true });
-      }
-    });
+async function handleRegulation(interaction) {
+  const embed = new EmbedBuilder()
+    .setTitle('📜 **Regulamin**')
+    .setDescription('Aby kontynuować, odpowiedz na pytania związane z regulaminem.')
+    .setColor('#3498db');
 
-    collector.on('end', (collected, reason) => {
-      if (reason === 'time') {
-        interaction.followUp({ content: '⏰ Czas weryfikacji minął.', ephemeral: true });
-      }
-    });
+  await interaction.reply({ embeds: [embed], ephemeral: true });
+  await interaction.user.send('📋 Proszę odpowiedzieć na pytania regulaminowe:\n\n1. Czy zaakceptowałeś nasz regulamin? (Tak/Nie)');
+}
+
+async function handleModPanel(interaction) {
+  if (!interaction.member.roles.cache.has(moderatorRoleId)) {
+    return interaction.reply({ content: '❌ Nie masz dostępu do panelu moderatora.', ephemeral: true });
   }
-});
 
-  const regulationAnswers = new Map();  // Mapa przechowująca odpowiedzi użytkowników na pytania regulaminowe
+  const modMenu = new StringSelectMenuBuilder()
+    .setCustomId('mod_action_menu')
+    .setPlaceholder('🛠️ Wybierz akcję moderacyjną')
+    .addOptions([
+      { label: '🔇 Wycisz użytkownika', value: 'mute_user' },
+      { label: '👢 Wyrzuć użytkownika', value: 'kick_user' },
+      { label: '⛔ Zbanuj użytkownika', value: 'ban_user' }
+    ]);
 
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isStringSelectMenu()) return;
-
-  // Wybór opcji 'Regulamin' w panelu
-  if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'regulation_test') {
-    const embed = new EmbedBuilder()
-      .setTitle('📜 **Regulamin**')
-      .setDescription('Aby kontynuować, odpowiedz na pytania związane z regulaminem.')
-      .setColor('#3498db');
-
-    await interaction.reply({ embeds: [embed], ephemeral: true });
-
-    // Wysyłanie wiadomości z pytaniami regulaminowymi
-    await interaction.user.send('📋 Proszę odpowiedzieć na pytania regulaminowe:\n\n1. Czy zaakceptowałeś nasz regulamin? (Tak/Nie)');
-
-    const filter = (response) => response.author.id === interaction.user.id;
-    const collector = interaction.user.dmChannel.createMessageCollector({ filter, time: 60000 });
-
-    collector.on('collect', (message) => {
-      if (message.content.toLowerCase() === 'tak') {
-        regulationAnswers.set(interaction.user.id, 'Akceptacja regulaminu: TAK');
-        interaction.followUp({ content: '✅ Regulamin zaakceptowany. Możesz kontynuować.', ephemeral: true });
-        collector.stop();
-      } else {
-        regulationAnswers.set(interaction.user.id, 'Akceptacja regulaminu: NIE');
-        interaction.followUp({ content: '❌ Musisz zaakceptować regulamin, aby kontynuować.', ephemeral: true });
-      }
-    });
-
-    collector.on('end', (collected, reason) => {
-      if (reason === 'time') {
-        interaction.followUp({ content: '⏰ Czas na odpowiedź minął.', ephemeral: true });
-      }
-    });
-  }
-});
+  const row = new ActionRowBuilder().addComponents(modMenu);
+  await interaction.reply({ content: '🛠️ Panel moderatora:', components: [row], ephemeral: true });
+}
 
 client.login(process.env.TOKEN);
