@@ -240,18 +240,80 @@ client.on('interactionCreate', async interaction => {
     content: `🔧 Podaj ID użytkownika do akcji: ${modActionName[selected]}\n(Na razie system testowy - brak działania)`,
     ephemeral: true
   });
+const verificationCodes = new Map();  // Mapa przechowująca kody weryfikacyjne
 
-  // Tutaj można by rozbudować o modal lub kolejną interakcję do wykonania prawdziwej akcji.
-});
 client.on('interactionCreate', async interaction => {
   if (!interaction.isStringSelectMenu()) return;
 
+  // Wybór opcji 'Weryfikacja' w panelu
   if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'verification_ticket') {
-    return interaction.reply({ content: '🔍 Weryfikacja nieaktywna (placeholder)', ephemeral: true });
-  }
+    const embed = new EmbedBuilder()
+      .setTitle('🔍 **Weryfikacja**')
+      .setDescription('Wpisz kod weryfikacyjny, aby potwierdzić swoją tożsamość.')
+      .setColor('#3498db');
 
-  if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'regulation_test') {
-    return interaction.reply({ content: '📜 Test regulaminu nieaktywny (placeholder)', ephemeral: true });
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+
+    // Wysyłanie wiadomości do użytkownika z prośbą o podanie kodu
+    await interaction.user.send('🔑 Proszę podać swój kod weryfikacyjny.');
+
+    const filter = (response) => response.author.id === interaction.user.id;
+    const collector = interaction.user.dmChannel.createMessageCollector({ filter, time: 60000 });
+
+    collector.on('collect', (message) => {
+      if (verificationCodes.has(message.content)) {
+        interaction.followUp({ content: '✅ Weryfikacja zakończona pomyślnie!', ephemeral: true });
+        collector.stop();
+      } else {
+        interaction.followUp({ content: '❌ Niepoprawny kod. Spróbuj ponownie.', ephemeral: true });
+      }
+    });
+
+    collector.on('end', (collected, reason) => {
+      if (reason === 'time') {
+        interaction.followUp({ content: '⏰ Czas weryfikacji minął.', ephemeral: true });
+      }
+    });
   }
 });
+
+  const regulationAnswers = new Map();  // Mapa przechowująca odpowiedzi użytkowników na pytania regulaminowe
+
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isStringSelectMenu()) return;
+
+  // Wybór opcji 'Regulamin' w panelu
+  if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'regulation_test') {
+    const embed = new EmbedBuilder()
+      .setTitle('📜 **Regulamin**')
+      .setDescription('Aby kontynuować, odpowiedz na pytania związane z regulaminem.')
+      .setColor('#3498db');
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+
+    // Wysyłanie wiadomości z pytaniami regulaminowymi
+    await interaction.user.send('📋 Proszę odpowiedzieć na pytania regulaminowe:\n\n1. Czy zaakceptowałeś nasz regulamin? (Tak/Nie)');
+
+    const filter = (response) => response.author.id === interaction.user.id;
+    const collector = interaction.user.dmChannel.createMessageCollector({ filter, time: 60000 });
+
+    collector.on('collect', (message) => {
+      if (message.content.toLowerCase() === 'tak') {
+        regulationAnswers.set(interaction.user.id, 'Akceptacja regulaminu: TAK');
+        interaction.followUp({ content: '✅ Regulamin zaakceptowany. Możesz kontynuować.', ephemeral: true });
+        collector.stop();
+      } else {
+        regulationAnswers.set(interaction.user.id, 'Akceptacja regulaminu: NIE');
+        interaction.followUp({ content: '❌ Musisz zaakceptować regulamin, aby kontynuować.', ephemeral: true });
+      }
+    });
+
+    collector.on('end', (collected, reason) => {
+      if (reason === 'time') {
+        interaction.followUp({ content: '⏰ Czas na odpowiedź minął.', ephemeral: true });
+      }
+    });
+  }
+});
+
 client.login(process.env.TOKEN);
