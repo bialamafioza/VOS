@@ -1,15 +1,16 @@
-const {
-  Client,
-  GatewayIntentBits,
-  ActivityType,
-  ActionRowBuilder,
-  StringSelectMenuBuilder,
-  EmbedBuilder,
-  PermissionsBitField,
-  ChannelType,
-  ButtonBuilder,
-  ButtonStyle
+const { 
+  Client, 
+  GatewayIntentBits, 
+  ActivityType, 
+  ActionRowBuilder, 
+  StringSelectMenuBuilder, 
+  EmbedBuilder, 
+  PermissionsBitField, 
+  ChannelType, 
+  ButtonBuilder, 
+  ButtonStyle 
 } = require('discord.js');
+
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
@@ -25,20 +26,28 @@ const client = new Client({
 
 const app = express();
 const port = 3000;
-const ticketCategoryId = '1302743323089309876'; // Kategoria do ticketów
-const ticketLogChannelId = '1358020433374482453'; // <- Uzupełnij ID kanału logów
 
 app.get('/', (req, res) => {
-  const imagePath = path.join(__dirname, 'index.html');
-  res.sendFile(imagePath);
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(port, () => {
   console.log(`\x1b[36m[ SERVER ]\x1b[0m \x1b[32m SH : http://localhost:${port} ✅\x1b[0m`);
 });
-
 const statusMessages = ["🎧 Biala Mafioza", "🎮 Biala Mafioza"];
+const statusType = 'online'; 
 let currentStatusIndex = 0;
+
+const verificationCodes = new Map();
+const regulationAnswers = new Map();
+
+const logChannelId = '1358020433374482453';
+
+const shopItems = [
+  { label: '💎 VIP', description: 'Kup specjalną rangę VIP.', value: 'buy_vip' },
+  { label: '🔑 Klucz Premium', description: 'Uzyskaj dostęp do ekskluzywnych funkcji.', value: 'buy_premium_key' },
+  { label: '🛡️ Ochrona Konta', description: 'Dodatkowe zabezpieczenia konta.', value: 'buy_account_protection' }
+];
 
 client.once('ready', async () => {
   console.log(`Zalogowano jako ${client.user.tag}`);
@@ -51,8 +60,9 @@ function updateStatus() {
   const currentStatus = statusMessages[currentStatusIndex];
   client.user.setPresence({
     activities: [{ name: currentStatus, type: ActivityType.Playing }],
-    status: 'online',
+    status: statusType,
   });
+  console.log(`\x1b[33m[ STATUS ]\x1b[0m Updated status to: ${currentStatus} (${statusType})`);
   currentStatusIndex = (currentStatusIndex + 1) % statusMessages.length;
 }
 
@@ -61,200 +71,184 @@ function heartbeat() {
     console.log(`\x1b[35m[ HEARTBEAT ]\x1b[0m Bot is alive at ${new Date().toLocaleTimeString()}`);
   }, 30000);
 }
-
-const verificationCodes = new Map();
-const regulationAnswers = new Map();
-
-const shopItems = [
-  { label: '💎 Serwer Discord', description: 'Kup Serwer Discord (Cena 5 zł) .', value: 'buy_Discord' },
-  { label: '🔑 Strona Internetowa', description: 'Kup Stronę Internetową (Cena 5 zł) .', value: 'buy_Storna' },
-  { label: '🛡️ Bot', description: 'Kup Własnego Bota (Cena 5 zł).', value: 'buy_bot' },
-  { label: '📦 Zestaw', description: 'Kup Zestaw: Bot,Strona Internetowa, Serwer Discord (Cena 10 zł).', value: 'buy_zestaw' }
-];
-
 client.on('messageCreate', async message => {
   if (message.content === '!panel') {
     const embed = new EmbedBuilder()
-      .setTitle('📩 **Witaj!**')
-      .setDescription('Wybierz opcję z listy.')
+      .setTitle('📩 **Panel główny**')
+      .setDescription('Wybierz jedną z opcji poniżej, aby rozpocząć.')
       .setColor('#3498db')
       .setThumbnail('https://cdn-icons-png.flaticon.com/512/4712/4712031.png')
-      .setFooter({ text: 'Panel' });
+      .setFooter({ text: 'Panel serwera' });
 
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId('ticket_menu')
-      .setPlaceholder('📩 W czym możemy pomóc?')
+      .setPlaceholder('📩 Co chcesz zrobić?')
       .addOptions([
-        { label: '📩 Ticket', description: 'Stwórz standardowy ticket.', value: 'create_ticket' },
-        { label: '🔍 Weryfikacja', description: 'Zweryfikuj się podając kod.', value: 'verification_ticket' },
-        { label: '📜 Regulamin', description: 'Odpowiedz na pytania regulaminowe.', value: 'regulation_test' },
-        { label: '🛒 Sklep', description: 'Kup przedmiot z naszego sklepu.', value: 'shop_menu' }
+        { label: '📩 Ticket', description: 'Stwórz ticket pomocy.', value: 'create_ticket' },
+        { label: '🔍 Weryfikacja', description: 'Zweryfikuj się kodem.', value: 'verification_ticket' },
+        { label: '📜 Regulamin', description: 'Rozwiąż quiz z regulaminu.', value: 'regulation_test' },
+        { label: '🛒 Sklep', description: 'Kup przedmiot w sklepie.', value: 'shop_menu' },
+        { label: '🛠️ Panel moderatora', description: 'Dostęp tylko dla moderatorów.', value: 'mod_panel' }
       ]);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
     await message.channel.send({ embeds: [embed], components: [row] });
   }
+});
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isStringSelectMenu()) return;
 
-  // Zamknięcie ticketu z powodem
-  if (message.content.startsWith('!zamknij')) {
-    const reason = message.content.split(' ').slice(1).join(' ') || 'Brak powodu';
-    if (!message.channel.name.includes('-')) return;
+  const user = interaction.user;
+  const guild = interaction.guild;
 
-    const logChannel = message.guild.channels.cache.get(ticketLogChannelId);
-    const embed = new EmbedBuilder()
-      .setTitle('📁 Ticket Zamknięty')
+  if (interaction.customId === 'ticket_menu') {
+    if (interaction.values[0] === 'create_ticket') {
+      const existingChannel = guild.channels.cache.find(c => c.name === `ticket-${user.id}`);
+      if (existingChannel) {
+        return interaction.reply({ content: 'Masz już otwarty ticket!', ephemeral: true });
+      }
+
+      const ticketChannel = await guild.channels.create({
+        name: `ticket-${user.id}`,
+        type: ChannelType.GuildText,
+        permissionOverwrites: [
+          { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
+          { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+          { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] }
+        ]
+      });
+
+      const closeButton = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('close_ticket')
+          .setLabel('Zamknij Ticket')
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      const ticketEmbed = new EmbedBuilder()
+        .setTitle('🎫 Ticket otwarty')
+        .setDescription('Zespół zaraz się Tobą zajmie.\n\nKliknij poniżej, aby zamknąć ticket.')
+        .setColor('#3498db');
+
+      await ticketChannel.send({ content: `<@${user.id}>`, embeds: [ticketEmbed], components: [closeButton] });
+
+      const logEmbed = new EmbedBuilder()
+        .setTitle('📂 Ticket utworzony')
+        .setDescription(`Użytkownik ${user.tag} otworzył ticket.`)
+        .addFields(
+          { name: 'ID użytkownika', value: user.id, inline: true },
+          { name: 'Kanał', value: `<#${ticketChannel.id}>`, inline: true },
+          { name: 'Czas', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+        )
+        .setColor('#2ecc71');
+
+      const logChannel = guild.channels.cache.get(logChannelId);
+      if (logChannel) logChannel.send({ embeds: [logEmbed] });
+
+      await interaction.reply({ content: `✅ Ticket został otwarty: ${ticketChannel}`, ephemeral: true });
+    }
+  }
+});
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+
+  if (interaction.customId === 'close_ticket') {
+    await interaction.reply({
+      content: '🛑 Czy na pewno chcesz zamknąć ticket?',
+      components: [
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId('confirm_close')
+            .setLabel('Tak, zamknij')
+            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder()
+            .setCustomId('cancel_close')
+            .setLabel('Anuluj')
+            .setStyle(ButtonStyle.Secondary)
+        )
+      ],
+      ephemeral: true
+    });
+  }
+
+  if (interaction.customId === 'confirm_close') {
+    const reason = 'Zamknięto przez użytkownika'; // Można tu zrobić prompt na własny powód
+
+    const closedEmbed = new EmbedBuilder()
+      .setTitle('🎟️ Ticket zamknięty')
       .addFields(
-        { name: 'Kanał:', value: message.channel.name, inline: true },
-        { name: 'Zamknięty przez:', value: message.author.tag, inline: true },
-        { name: 'Powód:', value: reason },
-        { name: 'Data:', value: new Date().toLocaleString() }
+        { name: 'Zamknięty przez', value: `<@${interaction.user.id}>`, inline: true },
+        { name: 'Czas', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true },
+        { name: 'Powód', value: reason }
       )
       .setColor('#e74c3c');
 
-    if (logChannel) logChannel.send({ embeds: [embed] });
+    const logChannel = interaction.guild.channels.cache.get(logChannelId);
+    if (logChannel) await logChannel.send({ embeds: [closedEmbed] });
 
-    await message.channel.send('🗑️ Kanał zostanie usunięty za 5 sekund...');
-    setTimeout(() => message.channel.delete().catch(console.error), 5000);
+    const channel = interaction.channel;
+    setTimeout(() => {
+      channel.delete().catch(err => console.error('Błąd przy zamykaniu kanału:', err));
+    }, 5000);
+
+    await interaction.update({ content: '✅ Ticket zostanie zamknięty za 5 sekund.', components: [] });
+  }
+
+  if (interaction.customId === 'cancel_close') {
+    await interaction.update({ content: '❎ Zamknięcie ticketu anulowane.', components: [] });
   }
 });
+const moderatorRoleId = 'MODERATOR_ROLE_ID'; // Podmień na prawdziwe ID rangi moderatora
 
 client.on('interactionCreate', async interaction => {
   if (!interaction.isStringSelectMenu()) return;
 
-  const { guild, user, values } = interaction;
-  const selection = values[0];
+  if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'mod_panel') {
+    if (!interaction.member.roles.cache.has(moderatorRoleId)) {
+      return interaction.reply({ content: '❌ Nie masz dostępu do panelu moderatora.', ephemeral: true });
+    }
 
-  const createTicketChannel = async (namePrefix, descriptionEmbed) => {
-    const channel = await guild.channels.create({
-      name: `${namePrefix}-${user.username}`,
-      type: ChannelType.GuildText,
-      parent: ticketCategoryId,
-      permissionOverwrites: [
-        { id: guild.id, deny: [PermissionsBitField.Flags.ViewChannel] },
-        { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-        { id: '1300816251706409020', allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels] }
-      ]
-    });
-    await channel.send({ embeds: [descriptionEmbed] });
-    return channel;
+    const modMenu = new StringSelectMenuBuilder()
+      .setCustomId('mod_action_menu')
+      .setPlaceholder('🛠️ Wybierz akcję moderacyjną')
+      .addOptions([
+        { label: '🔇 Wycisz użytkownika', value: 'mute_user' },
+        { label: '👢 Wyrzuć użytkownika', value: 'kick_user' },
+        { label: '⛔ Zbanuj użytkownika', value: 'ban_user' }
+      ]);
+
+    const row = new ActionRowBuilder().addComponents(modMenu);
+
+    await interaction.reply({ content: '🛠️ Panel moderatora:', components: [row], ephemeral: true });
+  }
+});
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isStringSelectMenu()) return;
+  if (interaction.customId !== 'mod_action_menu') return;
+
+  const selected = interaction.values[0];
+  const modActionName = {
+    mute_user: 'Wycisz',
+    kick_user: 'Wyrzuć',
+    ban_user: 'Zbanuj'
   };
 
-  if (interaction.customId === 'ticket_menu') {
-    if (selection === 'create_ticket') {
-      const embed = new EmbedBuilder()
-        .setTitle('🎟️ Ticket - Pomoc')
-        .setDescription('Opisz swój problem poniżej.')
-        .setColor('#3498db');
-      const channel = await createTicketChannel('ticket', embed);
-      await interaction.reply({ content: `📩 Ticket utworzony: ${channel}`, ephemeral: true });
-    }
+  await interaction.reply({
+    content: `🔧 Podaj ID użytkownika do akcji: ${modActionName[selected]}\n(Na razie system testowy - brak działania)`,
+    ephemeral: true
+  });
 
-    if (selection === 'verification_ticket') {
-      const code = Math.floor(100000 + Math.random() * 900000);
-      verificationCodes.set(user.id, code);
-      const embed = new EmbedBuilder()
-        .setTitle('🔍 Weryfikacja')
-        .setDescription(`Wpisz poniższy kod: \`${code}\``)
-        .setColor('#e67e22');
-      const channel = await createTicketChannel('weryfikacja', embed);
-      await interaction.reply({ content: `🔍 Kanał weryfikacji utworzony: ${channel}`, ephemeral: true });
-    }
+  // Tutaj można by rozbudować o modal lub kolejną interakcję do wykonania prawdziwej akcji.
+});
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isStringSelectMenu()) return;
 
-    if (selection === 'regulation_test') {
-      const member = guild.members.cache.get(user.id);
-      if (!member.roles.cache.has('1300816261655302216')) {
-        return interaction.reply({ content: '❌ Musisz mieć rangę zweryfikowany.', ephemeral: true });
-      }
-      const embed = new EmbedBuilder()
-        .setTitle('📜 Test Regulaminu')
-        .setDescription('Odpowiedz na pytania. Pisz "Tak"/"Nie" z wielkiej litery.')
-        .setColor('#1abc9c');
-      const channel = await createTicketChannel('regulamin', embed);
-
-      const questions = [
-        { question: 'Czy można spamić?', answer: 'Nie' },
-        { question: 'Czy można prosić o rangę?', answer: 'Nie' },
-        { question: 'Czy można podszywać się pod administrację?', answer: 'Nie' },
-        { question: 'Czy administracja może wejść na kanał prywatny w celu kontroli?', answer: 'Tak' }
-      ];
-      regulationAnswers.set(user.id, { questions, currentIndex: 0, correct: 0 });
-      await channel.send(questions[0].question);
-      await interaction.reply({ content: `📜 Test rozpoczęty: ${channel}`, ephemeral: true });
-    }
-
-    if (selection === 'shop_menu') {
-      const shopEmbed = new EmbedBuilder()
-        .setTitle('🛒 Sklep')
-        .setDescription('Wybierz produkt do zakupu.')
-        .setColor('#f1c40f');
-
-      const shopMenu = new StringSelectMenuBuilder()
-        .setCustomId('shop_selection')
-        .setPlaceholder('🛒 Wybierz przedmiot')
-        .addOptions(shopItems);
-
-      const row = new ActionRowBuilder().addComponents(shopMenu);
-      await interaction.reply({ embeds: [shopEmbed], components: [row], ephemeral: true });
-    }
+  if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'verification_ticket') {
+    return interaction.reply({ content: '🔍 Weryfikacja nieaktywna (placeholder)', ephemeral: true });
   }
 
-  if (interaction.customId === 'shop_selection') {
-    const item = shopItems.find(i => i.value === selection);
-    const embed = new EmbedBuilder()
-      .setTitle(`🛒 Zakup - ${item.label}`)
-      .setDescription(`Opis: ${item.description}`)
-      .setColor('#f39c12');
-
-    const channel = await createTicketChannel('zakup', embed);
-    await interaction.reply({ content: `🛒 Kanał zakupu utworzony: ${channel}`, ephemeral: true });
+  if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'regulation_test') {
+    return interaction.reply({ content: '📜 Test regulaminu nieaktywny (placeholder)', ephemeral: true });
   }
 });
-
-client.on('messageCreate', async message => {
-  const { author, channel, content, guild } = message;
-
-  if (channel.name.startsWith('weryfikacja-') && verificationCodes.has(author.id)) {
-    const code = verificationCodes.get(author.id);
-    if (content === code.toString()) {
-      const role = guild.roles.cache.get('1300816261655302216');
-      await guild.members.cache.get(author.id).roles.add(role);
-      verificationCodes.delete(author.id);
-      await channel.send(`✅ Zweryfikowano! Zamykam za 10 sek.`);
-      setTimeout(() => channel.delete().catch(console.error), 10000);
-    } else {
-      await channel.send('❌ Kod niepoprawny. Spróbuj ponownie.');
-    }
-  }
-
-  if (channel.name.startsWith('regulamin-') && regulationAnswers.has(author.id)) {
-    const userData = regulationAnswers.get(author.id);
-    const { questions, currentIndex } = userData;
-
-    if (content === questions[currentIndex].answer) {
-      userData.correct++;
-    } else {
-      await message.member.timeout(60000, 'Błędna odpowiedź w teście');
-      await channel.send('❌ Test niezaliczony. Spróbuj ponownie później.');
-      regulationAnswers.delete(author.id);
-      return setTimeout(() => channel.delete().catch(console.error), 5000);
-    }
-
-    userData.currentIndex++;
-    if (userData.currentIndex < questions.length) {
-      await channel.send(questions[userData.currentIndex].question);
-    } else {
-      const passed = userData.correct === questions.length;
-      const finalRole = guild.roles.cache.get('1300816260573040680');
-      if (passed && finalRole) {
-        await guild.members.cache.get(author.id).roles.add(finalRole);
-        await channel.send('✅ Gratulacje! Test zaliczony.');
-      } else {
-        await channel.send('❌ Test niezaliczony.');
-      }
-      regulationAnswers.delete(author.id);
-      setTimeout(() => channel.delete().catch(console.error), 10000);
-    }
-  }
-});
-
 client.login(process.env.TOKEN);
