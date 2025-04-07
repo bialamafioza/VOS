@@ -76,10 +76,10 @@ const muteTimes = [
 ];
 
 const shopItems = [
-  { label: '💎 Discord', description: 'Własny serwer discord (Cena 5zł).', value: 'buy_discord' },
-  { label: '🔑 Storna Internetowa ', description: 'Własna Strona Internetowa (Cena 5zł).', value: 'buy_strona' },
-  { label: '🛡️ Bot', description: 'Własny Bot (Cena 5zł).', value: 'buy_Bot' },
-  { label: '📦 Zestaw', description: 'Wszystkie Opcje (Cena 10zł).', value: 'buy_Bot' }
+  { label: '💎 Discord', description: 'Własny serwer discord (Cena 5zł).', value: 'buy_vip' },
+  { label: '🔑 Storna Internetowa ', description: 'Własna Strona Internetowa (Cena 5zł).', value: 'buy_premium_key' },
+  { label: '🛡️ Bot', description: 'Własny Bot (Cena 5zł).', value: 'buy_account_protection' },
+  { label: '📦 Zestaw', description: 'Wszystkie Opcje (Cena 10zł).', value: 'buy_Zestaw' }
 ];
 
 client.on('messageCreate', async message => {
