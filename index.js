@@ -65,6 +65,15 @@ function heartbeat() {
 const verificationCodes = new Map();
 const regulationAnswers = new Map();
 
+const muteTimes = [
+  { label: '5 minut', value: '300000' },
+  { label: '15 minut', value: '900000' },
+  { label: '1 godzina', value: '3600000' },
+  { label: '6 godzin', value: '21600000' },
+  { label: '24 godziny', value: '86400000' },
+  { label: '7 dni', value: '604800000' }
+];
+
 const shopItems = [
   { label: '💎 VIP', description: 'Kup specjalną rangę VIP.', value: 'buy_vip' },
   { label: '🔑 Klucz Premium', description: 'Uzyskaj dostęp do ekskluzywnych funkcji.', value: 'buy_premium_key' },
@@ -87,7 +96,8 @@ client.on('messageCreate', async message => {
         { label: '📩 Ticket', description: 'Stwórz standardowy ticket.', value: 'create_ticket' },
         { label: '🔍 Weryfikacja', description: 'Zweryfikuj się podając kod.', value: 'verification_ticket' },
         { label: '📜 Regulamin', description: 'Odpowiedz na pytania regulaminowe.', value: 'regulation_test' },
-        { label: '🛒 Sklep', description: 'Kup przedmiot z naszego sklepu.', value: 'shop_menu' }
+        { label: '🛒 Sklep', description: 'Kup przedmiot z naszego sklepu.', value: 'shop_menu' },
+        { label: '🛡️ Panel Moderatora', description: 'Dostępne tylko dla moderatorów.', value: 'moderator_panel' }
       ]);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
@@ -137,6 +147,169 @@ client.on('interactionCreate', async interaction => {
     await channel.send({ embeds: [descriptionEmbed] });
     return channel;
   };
+if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'moderator_panel') {
+  const member = interaction.guild.members.cache.get(interaction.user.id);
+  if (!member.roles.cache.has('1358020500000000000')) {
+    return interaction.reply({ content: '❌ Nie masz dostępu do Panelu Moderatora.', ephemeral: true });
+  }
+
+  const modEmbed = new EmbedBuilder()
+    .setTitle('🛡️ Panel Moderatora')
+    .setDescription('Wybierz akcję, którą chcesz wykonać.')
+    .setColor('#e74c3c');
+
+  const modMenu = new StringSelectMenuBuilder()
+    .setCustomId('mod_action')
+    .setPlaceholder('🛠️ Wybierz akcję')
+    .addOptions([
+      { label: '🔇 Wycisz użytkownika', value: 'mute_user' },
+      { label: '❌ Wyrzuć użytkownika', value: 'kick_user' },
+      { label: '🔨 Zbanuj użytkownika', value: 'ban_user' }
+    ]);
+
+  const row = new ActionRowBuilder().addComponents(modMenu);
+  await interaction.reply({ embeds: [modEmbed], components: [row], ephemeral: true });
+}
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isStringSelectMenu()) return;
+  if (interaction.customId !== 'mod_action') return;
+
+  const member = interaction.guild.members.cache.get(interaction.user.id);
+  if (!member.roles.cache.has('1358020500000000000')) {
+    return interaction.reply({ content: '❌ Nie masz uprawnień.', ephemeral: true });
+  }
+
+  const action = interaction.values[0];
+  await interaction.reply({ content: `✏️ Napisz wiadomość: \`@użytkownik powód\``, ephemeral: true });
+
+  const filter = m => m.author.id === interaction.user.id;
+  const collector = interaction.channel.createMessageCollector({ filter, max: 1, time: 30000 });
+
+  collector.on('collect', async m => {
+    const args = m.content.split(' ');
+    const target = m.mentions.members.first();
+    const reason = args.slice(1).join(' ') || 'Brak powodu';
+
+    if (!target) return m.reply('❌ Nie podano użytkownika.');
+
+    if (action === 'mute_user') {
+      await target.timeout(60 * 60 * 1000, reason);
+      m.reply(`🔇 Użytkownik ${target} został wyciszony. Powód: ${reason}`);
+    } else if (action === 'kick_user') {
+      await target.kick(reason);
+      m.reply(`❌ Użytkownik ${target} został wyrzucony. Powód: ${reason}`);
+    } else if (action === 'ban_user') {
+      await target.ban({ reason });
+      m.reply(`🔨 Użytkownik ${target} został zbanowany. Powód: ${reason}`);
+    }
+
+    const logChannel = interaction.guild.channels.cache.get('1358020433374482453');
+    if (logChannel) {
+      const logEmbed = new EmbedBuilder()
+        .setTitle(`🛡️ Akcja Moderacyjna`)
+        .addFields(
+          { name: 'Moderator', value: `${interaction.user.tag}`, inline: true },
+          { name: 'Użytkownik', value: `${target.user.tag}`, inline: true },
+          { name: 'Akcja', value: action.replace('_', ' '), inline: true },
+          { name: 'Powód', value: reason },
+          { name: 'Czas', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
+        )
+        .setColor('#e67e22');
+
+      logChannel.send({ embeds: [logEmbed] });
+    }
+collector.on('collect', async m => {
+  const args = m.content.split(' ');
+  const target = m.mentions.members.first();
+  const reason = args.slice(1).join(' ') || 'Brak powodu';
+
+  if (!target) return m.reply('❌ Nie podano użytkownika.');
+
+  const confirmEmbed = new EmbedBuilder()
+    .setTitle('❗ Potwierdzenie akcji')
+    .setDescription(`Czy na pewno chcesz wykonać akcję **${action.replace('_', ' ')}** na **${target.user.tag}**?\n\n**Powód:** ${reason}`)
+    .setColor('#f39c12');
+
+  const confirmButton = new ButtonBuilder()
+    .setCustomId('confirm_action')
+    .setLabel('✅ Potwierdź')
+    .setStyle(ButtonStyle.Success);
+
+  const cancelButton = new ButtonBuilder()
+    .setCustomId('cancel_action')
+    .setLabel('❌ Anuluj')
+    .setStyle(ButtonStyle.Danger);
+
+  const row = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
+
+  const confirmationMsg = await m.reply({ embeds: [confirmEmbed], components: [row] });
+
+  const buttonFilter = i => i.user.id === interaction.user.id;
+  const buttonCollector = confirmationMsg.createMessageComponentCollector({ filter: buttonFilter, time: 30000 });
+
+  buttonCollector.on('collect', async i => {
+    await i.deferUpdate();
+
+    if (i.customId === 'cancel_action') {
+      await m.reply('❌ Akcja została anulowana.');
+      return;
+    }
+
+    try {
+      if (action === 'mute_user') {
+        await target.timeout(60 * 60 * 1000, reason);
+        await m.reply(`🔇 Użytkownik ${target} został wyciszony. Powód: ${reason}`);
+      } else if (action === 'kick_user') {
+        await target.kick(reason);
+        await m.reply(`❌ Użytkownik ${target} został wyrzucony. Powód: ${reason}`);
+      } else if (action === 'ban_user') {
+        await target.ban({ reason });
+        await m.reply(`🔨 Użytkownik ${target} został zbanowany. Powód: ${reason}`);
+      }
+
+      const logChannel = interaction.guild.channels.cache.get('1358020433374482453');
+      if (logChannel) {
+        const logEmbed = new EmbedBuilder()
+          .setTitle('🛡️ Akcja Moderacyjna')
+          .addFields(
+            { name: 'Moderator', value: `${interaction.user.tag}`, inline: true },
+            { name: 'Użytkownik', value: `${target.user.tag}`, inline: true },
+            { name: 'Akcja', value: action.replace('_', ' '), inline: true },
+            { name: 'Powód', value: reason },
+            { name: 'Czas', value: `<t:${Math.floor(Date.now() / 1000)}:F>` }
+          )
+          .setColor('#e67e22');
+
+        logChannel.send({ embeds: [logEmbed] });
+      }
+    } catch (err) {
+      console.error(err);
+      await m.reply('❌ Nie udało się wykonać akcji. Sprawdź uprawnienia bota.');
+    }
+  });
+
+  buttonCollector.on('end', collected => {
+    confirmationMsg.edit({ components: [] }).catch(() => {});
+const timeMenu = new StringSelectMenuBuilder()
+  .setCustomId('mute_duration')
+  .setPlaceholder('⏱️ Wybierz czas wyciszenia')
+  .addOptions(muteTimes);
+
+const row = new ActionRowBuilder().addComponents(timeMenu);
+
+await m.reply({ content: '⏱️ Wybierz czas wyciszenia:', components: [row] });
+
+const timeCollector = m.channel.createMessageComponentCollector({
+  filter: i => i.user.id === interaction.user.id,
+  time: 15000
+});
+
+timeCollector.on('collect', async i => {
+  await i.deferUpdate();
+  const duration = parseInt(i.values[0]);
+
+  await target.timeout(duration, reason);
+  await m.channel.send(`🔇 ${target} został wyciszony na ${Math.floor(duration / 60000)} min. Powód: ${reason}`);
 
   if (interaction.customId === 'ticket_menu') {
     if (selection === 'create_ticket') {
