@@ -299,10 +299,10 @@ const row = new ActionRowBuilder().addComponents(timeMenu);
 
 
 
-const timeCollector = m.channel.createMessageComponentCollector({
+const timeCollector = m.channel.createMessageComponentCollector
   filter: i => i.user.id === interaction.user.id,
   time: 15000
-)}
+)};
 
 timeCollector.on('collect', async i => {
   await i.deferUpdate();
