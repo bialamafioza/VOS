@@ -198,7 +198,7 @@ client.on('interactionCreate', async interaction => {
     await interaction.update({ content: '❎ Zamknięcie ticketu anulowane.', components: [] });
   }
 });
-const moderatorRoleId = 'MODERATOR_ROLE_ID'; // Podmień na prawdziwe ID rangi moderatora
+const moderatorRoleId = '1300816251706409020'; // Podmień na prawdziwe ID rangi moderatora
 
 client.on('interactionCreate', async interaction => {
   if (!interaction.isStringSelectMenu()) return;
