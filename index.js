@@ -226,7 +226,7 @@ if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'moderat
     const channel = await createTicketChannel('zakup', embed);
     await interaction.reply({ content: `🛒 Kanał zakupu utworzony: ${channel}`, ephemeral: true });
   }
-});
+};
 
 client.on('messageCreate', async message => {
   const { author, channel, content, guild } = message;
