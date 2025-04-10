@@ -154,8 +154,8 @@ if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'moderat
   if (!member.roles.cache.has('1300816251706409020')) {
     return interaction.reply({ content: '❌ Nie masz dostępu do Panelu Moderatora.', ephemeral: true });
   }
-
-     .setTitle('🛡️ Panel Moderatora')
+const modEmbed = new EmbedBuilder()
+    .setTitle('🛡️ Panel Moderatora')
     .setDescription('Wybierz akcję, którą chcesz wykonać.')
     .setColor('#e74c3c');
 
