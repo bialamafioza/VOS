@@ -220,7 +220,7 @@ client.on('interactionCreate', async interaction => {
     const channel = await createTicketChannel('zakup', embed);
     await interaction.reply({ content: `🛒 Kanał zakupu utworzony: ${channel}`, ephemeral: true });
   }
-};
+});
 
 client.on('messageCreate', async message => {
   const { author, channel, content, guild } = message;
