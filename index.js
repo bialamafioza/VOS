@@ -268,8 +268,13 @@ client.on('messageCreate', async message => {
     }
   }
 });
+
 const ticketTimeouts = new Map(); // channelId => { timeoutId, ms }
 const defaultTimeoutMs = 2 * 60 * 60 * 1000; // 2h
+
+function isTicketChannel(channelName) {
+  return ['ticket-', 'weryfikacja-', 'regulamin-', 'zakup-'].some(prefix => channelName.startsWith(prefix));
+}
 
 function setTicketTimeout(channel, guild, ms, triggeredBy = 'System') {
   const existing = ticketTimeouts.get(channel.id);
@@ -297,40 +302,43 @@ function setTicketTimeout(channel, guild, ms, triggeredBy = 'System') {
   ticketTimeouts.set(channel.id, { timeoutId, ms });
 }
 
-// Monitoruj wiadomości w kanałach ticketowych
-client.on('messageCreate', message => {
-  if (message.channel.name.startsWith('ticket-') && !message.author.bot) {
-    const current = ticketTimeouts.get(message.channel.id);
+client.on('messageCreate', async message => {
+  const { channel, author, content, guild } = message;
+
+  if (!guild || author.bot) return;
+
+  if (isTicketChannel(channel.name)) {
+    // Resetuj timer na nowo
+    const current = ticketTimeouts.get(channel.id);
     const ms = current ? current.ms : defaultTimeoutMs;
-    setTicketTimeout(message.channel, message.guild, ms);
+    setTicketTimeout(channel, guild, ms);
   }
 
-  // Komenda !ustaw-czas 1h
-  if (message.content.startsWith('!ustaw-czas')) {
-    const match = message.content.match(/!ustaw-czas\s+(\d+)([hm])/);
+  // Komenda !ustaw-czas
+  if (content.startsWith('!ustaw-czas')) {
+    const match = content.match(/!ustaw-czas\s+(\d+)([hm])/);
     if (!match) {
-      return message.reply('❌ Użyj poprawnie: `!ustaw-czas 30m` lub `!ustaw-czas 2h`');
+      return channel.send('❌ Użycie: `!ustaw-czas 30m` lub `!ustaw-czas 2h`');
+    }
+
+    if (!isTicketChannel(channel.name)) {
+      return channel.send('❌ Tę komendę można używać tylko w kanale typu ticket.');
     }
 
     const value = parseInt(match[1]);
     const unit = match[2];
     const ms = unit === 'h' ? value * 60 * 60 * 1000 : value * 60 * 1000;
 
-    if (!message.channel.name.startsWith('ticket-')) {
-      return message.reply('❌ Tę komendę można używać tylko w kanale ticketowym.');
-    }
+    setTicketTimeout(channel, guild, ms, author.tag);
+    channel.send(`✅ Ustawiono automatyczne zamknięcie po ${value}${unit.toUpperCase()}.`);
 
-    setTicketTimeout(message.channel, message.guild, ms, message.author.tag);
-    message.reply(`✅ Ustawiono automatyczne zamknięcie ticketu po ${value}${unit.toUpperCase()}.`);
-
-    // Loguj
-    const logChannel = message.guild.channels.cache.get(ticketLogChannelId);
+    const logChannel = guild.channels.cache.get(ticketLogChannelId);
     if (logChannel) {
       const embed = new EmbedBuilder()
         .setTitle('⏱️ Zmieniono Czas Automatycznego Zamknięcia')
         .addFields(
-          { name: 'Kanał:', value: message.channel.name, inline: true },
-          { name: 'Ustawione przez:', value: message.author.tag, inline: true },
+          { name: 'Kanał:', value: channel.name, inline: true },
+          { name: 'Ustawione przez:', value: author.tag, inline: true },
           { name: 'Nowy czas:', value: `${value}${unit.toUpperCase()}` },
           { name: 'Data:', value: new Date().toLocaleString() }
         )
