@@ -27,7 +27,6 @@ const app = express();
 const port = 3000;
 const ticketCategoryId = '1302743323089309876'; // Kategoria do ticketów
 const ticketLogChannelId = '1358020433374482453'; // <- Uzupełnij ID kanału logów
-const moderatorRoleId = '1300816251706409020';
   
 app.get('/', (req, res) => {
   const imagePath = path.join(__dirname, 'index.html');
@@ -99,7 +98,6 @@ client.on('messageCreate', async message => {
         { label: '🔍 Weryfikacja', description: 'Zweryfikuj się podając kod.', value: 'verification_ticket' },
         { label: '📜 Regulamin', description: 'Odpowiedz na pytania regulaminowe.', value: 'regulation_test' },
         { label: '🛒 Sklep', description: 'Kup przedmiot z naszego sklepu.', value: 'shop_menu' },
-        { label: '🛡️ Panel Moderatora', description: 'Dostępne tylko dla moderatorów.', value: 'moderator_panel' }
       ]);
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
@@ -149,11 +147,7 @@ client.on('interactionCreate', async interaction => {
     await channel.send({ embeds: [descriptionEmbed] });
     return channel;
   };
-if (interaction.customId === 'ticket_menu' && interaction.values[0] === 'moderator_panel') {
-  const member = interaction.guild.members.cache.get(interaction.user.id);
-  if (!member.roles.cache.has('1300816251706409020')) {
-    return interaction.reply({ content: '❌ Nie masz dostępu do Panelu Moderatora.', ephemeral: true });
-  }
+
 
 
   
