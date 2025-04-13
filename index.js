@@ -349,33 +349,79 @@ client.on('messageCreate', async message => {
 });
 
 client.on('messageCreate', async message => {
-  const { member, content, guild, channel } = message;
+  if (!message.content.startsWith('!przerwa')) return;
+  if (!message.member.roles.cache.has('1300816251706409020')) return message.reply('❌ Brak uprawnień.');
 
-  if (content.startsWith('!przerwa')) {
-    if (!member.roles.cache.has('1300816251706409020')) {
-      return message.reply('❌ Nie masz uprawnień do użycia tej komendy.');
-    }
+  const args = message.content.split(' ');
+  const target = message.mentions.members.first();
+  const reason = args.slice(2).join(' ') || 'Brak powodu';
 
-    const reason = content.split(' ').slice(1).join(' ') || 'Brak powodu';
+  if (!target) return message.reply('❌ Użyj: `!przerwa @użytkownik powód`');
 
-    const logChannel1 = guild.channels.cache.get('1302425914495340574');
-    const logChannel2 = guild.channels.cache.get('1360281376720683341');
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId(`mute_duration_${target.id}_${reason.replace(/ /g, '_')}`)
+    .setPlaceholder('⏱️ Wybierz czas wyciszenia')
+    .addOptions([
+      { label: '10 minut', value: '600000' },
+      { label: '30 minut', value: '1800000' },
+      { label: '1 godzina', value: '3600000' },
+      { label: '2 godziny', value: '7200000' },
+      { label: '6 godzin', value: '21600000' },
+      { label: '12 godzin', value: '43200000' },
+      { label: '1 dzień', value: '86400000' },
+      { label: '2 dni', value: '172800000' },
+      { label: '7 dni', value: '604800000' }
+    ]);
 
+  const row = new ActionRowBuilder().addComponents(menu);
+
+  await message.reply({
+    content: `Wybierz czas przerwy dla ${target}`,
+    components: [row]
+  });
+});
+
+// --- Obsługa wyboru czasu wyciszenia z menu
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isStringSelectMenu()) return;
+  if (!interaction.customId.startsWith('mute_duration_')) return;
+
+  const [_, userId, ...reasonArr] = interaction.customId.split('_');
+  const reason = reasonArr.join(' ').replace(/_/g, ' ');
+  const duration = parseInt(interaction.values[0]);
+
+  const memberToMute = await interaction.guild.members.fetch(userId).catch(() => null);
+  if (!memberToMute) return interaction.reply({ content: '❌ Nie znaleziono użytkownika.', ephemeral: true });
+
+  try {
+    await memberToMute.timeout(duration, reason);
+
+    const durationMinutes = Math.floor(duration / 60000);
     const embed = new EmbedBuilder()
-      .setTitle('☕ Przerwa Zgłoszona')
+      .setTitle('🔇 Użytkownik Wyciszony (Przerwa)')
       .addFields(
-        { name: '👤 Moderator:', value: message.author.tag, inline: true },
-        { name: '📍 Kanał:', value: channel.name, inline: true },
+        { name: '👤 Moderator:', value: interaction.user.tag, inline: true },
+        { name: '🙍 Użytkownik:', value: memberToMute.user.tag, inline: true },
+        { name: '⏱️ Czas:', value: `${durationMinutes} minut`, inline: true },
         { name: '📌 Powód:', value: reason },
-        { name: '🕒 Data:', value: new Date().toLocaleString() }
+        { name: '📅 Data:', value: new Date().toLocaleString() }
       )
       .setColor('#f39c12');
 
-    message.reply('✅ Przerwa została zgłoszona.');
+    const log1 = interaction.guild.channels.cache.get('1302425914495340574');
+    const log2 = interaction.guild.channels.cache.get('1360281376720683341');
 
-    // Wyślij do obu kanałów
-    if (logChannel1) logChannel1.send({ embeds: [embed] });
-    if (logChannel2) logChannel2.send({ embeds: [embed] });
+    if (log1) await log1.send({ embeds: [embed] });
+    if (log2) await log2.send({ embeds: [embed] });
+
+    await interaction.update({
+      content: `✅ Wyciszono ${memberToMute} na ${durationMinutes} minut.`,
+      components: []
+    });
+
+  } catch (err) {
+    console.error(err);
+    await interaction.reply({ content: '❌ Nie udało się wyciszyć użytkownika.', ephemeral: true });
   }
 });
 
