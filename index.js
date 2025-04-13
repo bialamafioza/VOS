@@ -348,4 +348,35 @@ client.on('messageCreate', async message => {
   }
 });
 
+client.on('messageCreate', async message => {
+  const { member, content, guild, channel } = message;
+
+  if (content.startsWith('!przerwa')) {
+    if (!member.roles.cache.has('1300816251706409020')) {
+      return message.reply('❌ Nie masz uprawnień do użycia tej komendy.');
+    }
+
+    const reason = content.split(' ').slice(1).join(' ') || 'Brak powodu';
+
+    const logChannel1 = guild.channels.cache.get('1302425914495340574');
+    const logChannel2 = guild.channels.cache.get('1360281376720683341');
+
+    const embed = new EmbedBuilder()
+      .setTitle('☕ Przerwa Zgłoszona')
+      .addFields(
+        { name: '👤 Moderator:', value: message.author.tag, inline: true },
+        { name: '📍 Kanał:', value: channel.name, inline: true },
+        { name: '📌 Powód:', value: reason },
+        { name: '🕒 Data:', value: new Date().toLocaleString() }
+      )
+      .setColor('#f39c12');
+
+    message.reply('✅ Przerwa została zgłoszona.');
+
+    // Wyślij do obu kanałów
+    if (logChannel1) logChannel1.send({ embeds: [embed] });
+    if (logChannel2) logChannel2.send({ embeds: [embed] });
+  }
+});
+
 client.login(process.env.TOKEN);
