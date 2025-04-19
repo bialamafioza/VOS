@@ -75,8 +75,8 @@ const muteTimes = [
 ];
 
 const shopItems = [
-  { label: '💲 Robux', description:'Tanie Robuxy (Zależy od ilości robuxów ).', value: 'buy_robux' },
-  { label: '🤖 Nitro', description:'Tanie Nitro (Zależy od ilości).', value: 'buy_nitro' },
+  { label: '💲 Robux', description:'Tanie Robuxy (1 robux = 4 grosze ,minimum 100 robux ).', value: 'buy_robux' },
+  { label: '🤖 Nitro', description:'Tanie Nitro (1 rok = 300 zł ).', value: 'buy_nitro' },
   { label: '💎 Discord', description: 'Własny serwer discord (Cena 5zł).', value: 'buy_vip' },
   { label: '🔑 Storna Internetowa ', description: 'Własna Strona Internetowa (Cena 5zł).', value: 'buy_premium_key' },
   { label: '🛡️ Bot', description: 'Własny Bot (Cena 5zł).', value: 'buy_account_protection' },
