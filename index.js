@@ -388,8 +388,11 @@ client.on('interactionCreate', async interaction => {
   if (!interaction.isStringSelectMenu()) return;
   if (!interaction.customId.startsWith('mute_duration_')) return;
 
-  const [_, userId, ...reasonArr] = interaction.customId.split('_');
-  const reason = reasonArr.join(' ').replace(/_/g, ' ');
+const match = interaction.customId.match(/^mute_duration_(\d+)_(.+)$/);
+if (!match) return interaction.reply({ content: '❌ Błąd formatowania danych.', ephemeral: true });
+
+const userId = match[1];
+const reason = match[2].replace(/_/g, ' ');
   const duration = parseInt(interaction.values[0]);
 
   const memberToMute = await interaction.guild.members.fetch(userId).catch(() => null);
