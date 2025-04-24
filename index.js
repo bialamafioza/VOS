@@ -427,5 +427,6 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-require('dotenv').config();
+console.log("[DEBUG] TOKEN Z ENV:", process.env.TOKEN);
 client.login(process.env.TOKEN);
+
