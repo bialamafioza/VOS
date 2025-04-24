@@ -388,15 +388,20 @@ client.on('interactionCreate', async interaction => {
   if (!interaction.isStringSelectMenu()) return;
   if (!interaction.customId.startsWith('mute_duration_')) return;
 
-const match = interaction.customId.match(/^mute_duration_(\d+)_(.+)$/);
-if (!match) return interaction.reply({ content: '❌ Błąd formatowania danych.', ephemeral: true });
+  const match = interaction.customId.match(/^mute_duration_(\d+)_(.+)$/);
+  if (!match) return interaction.reply({ content: '❌ Błąd formatowania danych.', ephemeral: true });
 
-const userId = match[1];
-const reason = match[2].replace(/_/g, ' ');
+  const userId = match[1];
+  const reason = match[2].replace(/_/g, ' ');
   const duration = parseInt(interaction.values[0]);
 
   const memberToMute = await interaction.guild.members.fetch(userId).catch(() => null);
-  if (!memberToMute) return interaction.reply({ content: '❌ Nie znaleziono użytkownika.', ephemeral: true });
+  if (!memberToMute) {
+    return interaction.update({
+      content: '❌ Nie znaleziono użytkownika. Prawdopodobnie opuścił serwer.',
+      components: []
+    });
+  }
 
   try {
     await memberToMute.timeout(duration, reason);
@@ -430,6 +435,6 @@ const reason = match[2].replace(/_/g, ' ');
   }
 });
 
+
 console.log("[DEBUG] TOKEN Z ENV:", process.env.TOKEN);
 client.login(process.env.TOKEN);
-
